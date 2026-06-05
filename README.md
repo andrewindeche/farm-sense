@@ -36,6 +36,64 @@
 | 4.    |     SMS Gateway               | Delivers message to farmer's device                      |
 | 5.    |     Dashboard                 | Displaye forecast, AI advice and SMS logs                |
 
+## <h1> Set up Instructions</h1>
+
+1. Clone the Repository
+
+```bash
+git clone https://github.com/andrewindeche/farm-sense.git
+cd farm-sense
+```
+
+2. Set Up Python Backend (FastAPI)
+```bash
+python3 -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+```
+
+3. Install dependencies
+```bash
+python3 -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+```
+
+4. Environment variables
+```bash  
+WEATHER_API_KEY=your_weatherai_key
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+TWILIO_PHONE=+1234567890
+FARMER_PHONE=+2547XXXXXXXX
+```
+
+5. Run FastAPI server
+```bash  
+uvicorn main:app --reload
+
+main.py should contain your WeatherAI GET request logic, fallback farming rules, and SMS send function.
+```
+
+6. Set Up Frontend Dashboard
+React
+```bash 
+npx create-react-app dashboard
+cd dashboard
+npm install axios
+npm start
+```
+
+7. Schedule Locally (cron job)
+```bash 
+crontab -e
+```
+
+Example entry (send advice every morning at 7 AM):
+```bash
+0 7 * * * /path/to/venv/bin/python /path/to/farm-sense/send_sms.py
+```
+
 ## <h1> Author </h1>
 
 Built by <b>Andrew Indeche</b>
