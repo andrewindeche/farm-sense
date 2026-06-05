@@ -12,6 +12,16 @@
 <li>Harvest Reminders Based on crop cycle length e.g. maize ~90 days.</li>
 </ul>
 
+## <h1> Architeture and Flow</h1>
+
+| Step  | Feature                       | Role                                                     |
+| ----- |-------------------------------|--------------------------------------------------------- |
+| 1.    |     WeatherAI                 | Fetch weather forecast based on GET request              |
+| 2.    |     AI Agent                  | Recieves data from Weather AI,generates Farming Advice   |
+| 3.    |     Callback/Webhook Layer    | Sends AI output to SMS Gateway                           |
+| 4.    |     SMS Gateway               | Delivers message to farmer's device                      |
+| 5.    |     Dashboard                 | Displaye forecast, AI advice and SMS logs                |
+
 ## <h1> Author </h1>
 
 Built by <b>Andrew Indeche</b>
