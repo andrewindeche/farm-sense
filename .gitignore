@@ -1,0 +1,30 @@
+# Virtual environment
+backend/venv/
+backend/.env
+
+# Python cache
+backend/__pycache__/
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+
+# Logs
+backend/*.log
+
+# IDE/editor settings
+backend/.vscode/
+backend/.idea/
+
+# OS files
+backend/.DS_Store
+backend/Thumbs.db
+
+# Build/packaging
+backend/*.egg-info/
+backend/dist/
+backend/build/
+
+# Test/coverage
+backend/.coverage
+backend/htmlcov/
+backend/.pytest_cache/
