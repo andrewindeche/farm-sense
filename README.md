@@ -9,6 +9,7 @@
 | 5.Firebase cloud Messaging| Push Notification               | [Push-Notification];            |
 | 6.ReactJs                 | Frontend Library                | [Frontend]; [Javascript];       |
 | 7.FastApi                 | Backend Framework               | [Backend]; [Python];            |
+| 8.CronJob                 | Schedule jobs                   | [Jobs]; [Scheduler];            |
 
 ## <h1> Description</h1>
 
@@ -29,8 +30,8 @@
 
 | Step  | Feature                       | Role                                                     |
 | ----- | ----------------------------- | -------------------------------------------------------- |
-| 1.    |     WeatherAI                 | Fetch weather forecast based on GET request              |
-| 2.    |     AI Agent                  | Recieves data from Weather AI,generates Farming Advice   |
+| 1.    |     WeatherAI                 | Fetch weather forecast based on GET request or Cronjob   |
+| 2.    |     AI Agent/FastAPI          | Recieves data from Weather AI,generates Farming Advice   |
 | 3.    |     Callback/Webhook Layer    | Sends AI output to SMS Gateway                           |
 | 4.    |     SMS Gateway               | Delivers message to farmer's device                      |
 | 5.    |     Dashboard                 | Displaye forecast, AI advice and SMS logs                |
