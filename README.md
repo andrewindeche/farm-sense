@@ -49,8 +49,7 @@ cd farm-sense
 
 ```bash
 cd backend
-python3 -m venv .venv
-source .venv/bin/activate   # Linux/Mac
+python3 -m venv .venv # Linux/Mac
 .venv\Scripts\activate      # Windows
 pip install -r requirements.txt
 ```
@@ -62,13 +61,13 @@ Create `backend/.env`:
 WEATHER_API_KEY=your_weatherai_key
 AFRICASTALKING_USERNAME=sandbox
 AFRICASTALKING_API_KEY=your_africastalking_api_key
-AFRICASTALKING_SENDER_ID=sandbox
+AFRICASTALKING_SENDER_ID=AFRICASTKNG
 FARMER_PHONE=+2547XXXXXXXX
 ```
 
 - `WEATHER_API_KEY` must be a WeatherAI key, not an Africa's Talking key.
 - Africa's Talking keys usually start with `atsk_`; WeatherAI keys use a different prefix.
-- Use `AFRICASTALKING_SENDER_ID=sandbox` when testing with the Africa's Talking sandbox account.
+- Use `AFRICASTALKING_SENDER_ID=AFRICASTKNG` (the default sandbox sender ID) when testing with the Africa's Talking sandbox account.
 - For a live Africa's Talking account, set `AFRICASTALKING_SENDER_ID` to your approved sender ID.
 
 4. Run the backend
