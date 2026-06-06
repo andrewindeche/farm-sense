@@ -231,6 +231,68 @@ async def test_pest_disease_endpoint_returns_502_on_weather_error(client):
 
 
 @pytest.mark.asyncio
+async def test_harvest_reminder_endpoint_returns_reminder_and_sends_sms(client):
+    with patch(
+        "app.services.weather.weather_service.get_current"
+    ) as mock_weather, patch(
+        "app.services.africastalking.africastalking_service.send_sms"
+    ) as mock_send, patch(
+        "app.services.africastalking.africastalking_service.get_sender_id"
+    ) as mock_sender_id:
+        mock_weather.return_value = {"current": {"temp_c": 24, "humidity": 45, "condition": {"text": "Clear"}, "precip_mm": 0}}
+        mock_send.return_value = {"status": "sent"}
+        mock_sender_id.return_value = "FARMSENSE"
+
+        resp = await client.post(
+            "/api/advice/harvest-reminder",
+            json={"lat": -1.2921, "lon": 36.8219},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "reminder" in data
+    assert "favorable" in data["reminder"].lower()
+    assert data["sent"] is True
+
+
+@pytest.mark.asyncio
+async def test_harvest_reminder_endpoint_returns_alert_even_when_sms_fails(client):
+    with patch(
+        "app.services.weather.weather_service.get_current"
+    ) as mock_weather, patch(
+        "app.services.africastalking.africastalking_service.send_sms"
+    ) as mock_send:
+        mock_weather.return_value = {"current": {"temp_c": 24, "humidity": 45, "condition": {"text": "Clear"}, "precip_mm": 0}}
+        mock_send.side_effect = RuntimeError("SMS gateway down")
+
+        resp = await client.post(
+            "/api/advice/harvest-reminder",
+            json={"lat": -1.2921, "lon": 36.8219},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "reminder" in data
+    assert data["sent"] is False
+    assert data["sms_error"] == "SMS gateway down"
+
+
+@pytest.mark.asyncio
+async def test_harvest_reminder_endpoint_returns_502_on_weather_error(client):
+    with patch(
+        "app.services.weather.weather_service.get_current"
+    ) as mock_weather:
+        mock_weather.side_effect = Exception("Weather API down")
+
+        resp = await client.post(
+            "/api/advice/harvest-reminder",
+            json={"lat": -1.2921, "lon": 36.8219},
+        )
+
+    assert resp.status_code == 502
+
+
+@pytest.mark.asyncio
 async def test_notify_farmer_route_returns_502_on_error(client):
     with patch(
         "app.services.africastalking.africastalking_service.send_sms"
