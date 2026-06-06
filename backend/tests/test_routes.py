@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -290,6 +290,88 @@ async def test_harvest_reminder_endpoint_returns_502_on_weather_error(client):
         )
 
     assert resp.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_scheduler_subscribe_and_list(client):
+    resp = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.2921, "lon": 36.8219, "phone": "+254700000001"},
+    )
+    assert resp.status_code == 200
+    assert resp.json() == {"lat": -1.2921, "lon": 36.8219, "phone": "+254700000001", "status": "subscribed"}
+
+    list_resp = await client.get("/api/scheduler/subscribers")
+    assert list_resp.status_code == 200
+    phones = [s["phone"] for s in list_resp.json()["subscribers"]]
+    assert "+254700000001" in phones
+
+
+@pytest.mark.asyncio
+async def test_scheduler_subscribe_update_existing(client):
+    await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.29, "lon": 36.82, "phone": "+254700000001"},
+    )
+    resp = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.30, "lon": 36.83, "phone": "+254700000001"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "updated"
+
+
+@pytest.mark.asyncio
+async def test_scheduler_unsubscribe(client):
+    await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.2921, "lon": 36.8219, "phone": "+254700000001"},
+    )
+    resp = await client.post(
+        "/api/scheduler/unsubscribe",
+        json={"phone": "+254700000001"},
+    )
+    assert resp.status_code == 200
+    assert resp.json() == {"phone": "+254700000001", "status": "unsubscribed"}
+
+
+@pytest.mark.asyncio
+async def test_scheduler_unsubscribe_not_found(client):
+    resp = await client.post(
+        "/api/scheduler/unsubscribe",
+        json={"phone": "+254700009999"},
+    )
+    assert resp.status_code == 200
+    assert resp.json() == {"phone": "+254700009999", "status": "not_found"}
+
+
+@pytest.mark.asyncio
+async def test_scheduler_deliver_now(client):
+    await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.2921, "lon": 36.8219, "phone": "+254700000001"},
+    )
+    with patch(
+        "app.services.scheduler.weather_service.get_current",
+        new=AsyncMock(return_value={"current": {"temp_c": 25, "humidity": 60, "condition": {"text": "Clear"}, "precip_mm": 0}}),
+    ), patch(
+        "app.services.scheduler.crop_advice_service.suggest",
+        return_value="Crop advice.",
+    ), patch(
+        "app.services.scheduler.pest_disease_service.suggest",
+        return_value="Pest alert.",
+    ), patch(
+        "app.services.scheduler.harvest_reminder_service.suggest",
+        return_value="Harvest reminder.",
+    ), patch(
+        "app.services.scheduler.africastalking_service.send_sms",
+        return_value={"status": "sent"},
+    ):
+        resp = await client.post("/api/scheduler/deliver-now")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data == {"delivered": 1, "total": 1}
 
 
 @pytest.mark.asyncio
