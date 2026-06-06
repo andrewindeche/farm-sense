@@ -76,3 +76,30 @@ async def test_weather_returns_502_on_service_error(client):
 
     assert resp.status_code == 502
     assert resp.json() == {"detail": "API unavailable"}
+
+
+@pytest.mark.asyncio
+async def test_notify_farmer_route_sends_message(client):
+    with patch(
+        "app.services.africastalking.africastalking_service.send_sms"
+    ) as mock_send:
+        mock_send.return_value = {"status": "sent"}
+
+        resp = await client.post("/api/notify/farmer?message=Hello")
+
+    assert resp.status_code == 200
+    assert resp.json() == {"status": "sent"}
+    mock_send.assert_called_once_with("Hello")
+
+
+@pytest.mark.asyncio
+async def test_notify_farmer_route_returns_502_on_error(client):
+    with patch(
+        "app.services.africastalking.africastalking_service.send_sms"
+    ) as mock_send:
+        mock_send.side_effect = Exception("SMS failed")
+
+        resp = await client.post("/api/notify/farmer?message=Hello")
+
+    assert resp.status_code == 502
+    assert resp.json() == {"detail": "SMS failed"}
