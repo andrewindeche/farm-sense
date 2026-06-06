@@ -42,7 +42,7 @@ async def lifespan(app):
 app = FastAPI(title="FarmSense API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=[settings.frontend_url,"https://farm-sense.netlify.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
