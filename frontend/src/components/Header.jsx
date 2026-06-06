@@ -1,14 +1,16 @@
 import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 import { Spa } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
 
 export default function Header() {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const dispatch = useDispatch();
+  const { token, username } = useSelector((s) => s.auth);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
+    dispatch(logout());
     navigate("/login");
   };
 
@@ -22,7 +24,7 @@ export default function Header() {
         {token && (
           <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
             <Typography variant="body2" sx={{ color: "#A5D6A7" }}>
-              {localStorage.getItem("username")}
+              {username}
             </Typography>
             <Button
               variant="outlined"
