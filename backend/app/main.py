@@ -10,6 +10,7 @@ from .services.authentication import auth_service
 from .services.weather import weather_service
 from .services.africastalking import africastalking_service
 from .services.crop_advice import crop_advice_service
+from .services.pest_disease import pest_disease_service
 
 app = FastAPI(title="FarmSense API")
 
@@ -124,6 +125,38 @@ async def request_advice(payload: AdviceRequestPayload):
         logger.warning("SMS send failed (advice still returned): %s: %s", type(e).__name__, e)
         return {
             "recommendation": recommendation,
+            "sent": False,
+            "sms_error": str(e),
+        }
+
+
+@app.post("/api/advice/pest-disease")
+async def pest_disease_advice(payload: AdviceRequestPayload):
+    try:
+        weather = await weather_service.get_current(payload.lat, payload.lon)
+    except Exception as e:
+        logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
+        raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
+
+    try:
+        alert = pest_disease_service.suggest(weather)
+    except Exception as e:
+        logger.error("Pest/disease advice failed: %s: %s", type(e).__name__, e)
+        raise HTTPException(status_code=502, detail=f"Pest/disease advice error: {e}")
+
+    try:
+        sender_id = africastalking_service.get_sender_id()
+        sms_response = africastalking_service.send_sms(alert, to=payload.farmer_phone)
+        return {
+            "alert": alert,
+            "sent": True,
+            "sms_sender_id": sender_id,
+            "sms_response": sms_response,
+        }
+    except Exception as e:
+        logger.warning("SMS send failed (alert still returned): %s: %s", type(e).__name__, e)
+        return {
+            "alert": alert,
             "sent": False,
             "sms_error": str(e),
         }
