@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
@@ -13,8 +14,17 @@ from .services.africastalking import africastalking_service
 from .services.crop_advice import crop_advice_service
 from .services.pest_disease import pest_disease_service
 from .services.harvest_reminder import harvest_reminder_service
+from .services.scheduler import scheduler_service
 
-app = FastAPI(title="FarmSense API")
+
+@asynccontextmanager
+async def lifespan(app):
+    scheduler_service.start()
+    yield
+    scheduler_service.stop()
+
+
+app = FastAPI(title="FarmSense API", lifespan=lifespan)
 
 
 class AuthPayload(BaseModel):
@@ -27,6 +37,16 @@ class AdviceRequestPayload(BaseModel):
     lon: float
     use_ai: bool = False
     farmer_phone: str | None = None
+
+
+class SubscribePayload(BaseModel):
+    lat: float
+    lon: float
+    phone: str
+
+
+class UnsubscribePayload(BaseModel):
+    phone: str
 
 
 def _get_bearer_token(authorization: str | None) -> str:
@@ -193,6 +213,35 @@ async def harvest_reminder(payload: AdviceRequestPayload):
             "sent": False,
             "sms_error": str(e),
         }
+
+
+@app.get("/api/scheduler/subscribers")
+async def list_subscribers():
+    return {"subscribers": scheduler_service.subscribers}
+
+
+@app.post("/api/scheduler/subscribe")
+async def subscribe(payload: SubscribePayload):
+    try:
+        return scheduler_service.add_subscriber(payload.lat, payload.lon, payload.phone)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/scheduler/unsubscribe")
+async def unsubscribe(payload: UnsubscribePayload):
+    try:
+        return scheduler_service.remove_subscriber(payload.phone)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/scheduler/deliver-now")
+async def deliver_now():
+    try:
+        return await scheduler_service.deliver_all()
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @app.post("/api/notify/farmer")
