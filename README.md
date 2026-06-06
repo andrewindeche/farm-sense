@@ -58,24 +58,36 @@ pip install -r requirements.txt
 ```
 
 4. Environment variables
-```bash  
+```bash
 WEATHER_API_KEY=your_weatherai_key
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-TWILIO_PHONE=+1234567890
+AFRICASTALKING_USERNAME=sandbox
+AFRICASTALKING_API_KEY=your_africastalking_api_key
+AFRICASTALKING_SENDER_ID=FARMSENSE
 FARMER_PHONE=+2547XXXXXXXX
 ```
 
-5. Run FastAPI server
-```bash  
-uvicorn main:app --reload
-
-main.py should contain your WeatherAI GET request logic, fallback farming rules, and SMS send function.
+5. Run the backend
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8001
 ```
 
-6. Set Up Frontend Dashboard
+6. Backend API routes
+- `GET /api/weather/current?lat=<lat>&lon=<lon>`
+- `GET /api/weather/forecast?lat=<lat>&lon=<lon>&days=<days>`
+- `POST /api/notify/farmer?message=<text>`
+
+7. Postman usage
+- Do not send secret keys from Postman.
+- Your `.env` file on the server provides the WeatherAI and Africa's Talking credentials.
+- In Postman, only send query parameters for the endpoints above.
+
+8. Set Up Frontend Dashboard
 React
-```bash 
+```bash
 npx create-react-app dashboard
 cd dashboard
 npm install axios
