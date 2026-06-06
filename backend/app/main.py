@@ -6,6 +6,7 @@ from pydantic import BaseModel
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from app.config import settings
 from .services.authentication import auth_service
 from .services.weather import weather_service
 from .services.africastalking import africastalking_service
@@ -114,12 +115,11 @@ async def request_advice(payload: AdviceRequestPayload):
         raise HTTPException(status_code=502, detail=f"Crop advice error: {e}")
 
     try:
-        sender_id = africastalking_service.get_sender_id()
         sms_response = africastalking_service.send_sms(recommendation, to=payload.farmer_phone)
         return {
             "recommendation": recommendation,
             "sent": True,
-            "sms_sender_id": sender_id,
+            "sms_sender_id": settings.africastalking_sender_id,
             "sms_response": sms_response,
         }
     except Exception as e:
