@@ -88,6 +88,11 @@ uvicorn app.main:app --reload --port 8001
 - `GET /api/weather/current?lat=-1.2921&lon=36.8219` — current conditions by coordinates
 - `GET /api/weather/forecast?lat=-1.2921&lon=36.8219&days=7` — forecast (1-7 days)
 
+**Crop Advice**
+- `POST /api/advice/request` — request a crop recommendation and send SMS
+  - body: `{ "lat": -1.2921, "lon": 36.8219 }`
+  - returns a fallback crop recommendation text if AI is unavailable
+
 **SMS Notifications (Africa's Talking)**
 - `POST /api/notify/farmer?message=Water+your+crops` — send SMS to farmer
 
