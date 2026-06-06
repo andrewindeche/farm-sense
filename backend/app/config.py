@@ -1,4 +1,5 @@
 from pathlib import Path
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -12,6 +13,13 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/farmsense"
+
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def convert_postgres_url_to_async(cls, v: str) -> str:
+        if v.startswith("postgresql://"):
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     frontend_url: str = "http://localhost:5173"
 
