@@ -499,3 +499,13 @@ async def test_subscribe_duplicate_phone(client):
     )
     assert resp2.status_code == 200
     assert resp2.json()["status"] == "updated"
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_exceeded_returns_429(client):
+    for _ in range(4):
+        resp = await client.post("/api/scheduler/deliver-now")
+        if resp.status_code == 429:
+            assert "limit" in resp.text.lower()
+            return
+    pytest.fail("Expected 429 after exceeding rate limit")
