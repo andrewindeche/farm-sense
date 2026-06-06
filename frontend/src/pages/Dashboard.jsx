@@ -20,6 +20,9 @@ import {
   BugReport,
   CalendarMonth,
   MyLocation,
+  CheckCircle,
+  Error as ErrorIcon,
+  Sms,
 } from "@mui/icons-material";
 
 const services = [
@@ -170,16 +173,96 @@ export default function Dashboard() {
 
     return (
       <Box>
-        <Typography variant="body1" sx={{ whiteSpace: "pre-line", mb: 1 }}>
+        <Typography variant="body1" sx={{ whiteSpace: "pre-line", mb: 2 }}>
           {text}
         </Typography>
         {sent !== undefined && (
-          <Typography
-            variant="caption"
-            color={sent ? "success.main" : "warning.main"}
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: sent ? "#E8F5E9" : "#FFF8E1",
+              border: 1,
+              borderColor: sent ? "#A5D6A7" : "#FFE082",
+            }}
           >
-            {sent ? "SMS sent successfully" : "SMS delivery failed"}
-          </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+              {sent ? (
+                <CheckCircle fontSize="small" color="success" />
+              ) : (
+                <ErrorIcon fontSize="small" color="warning" />
+              )}
+              <Typography
+                variant="subtitle2"
+                color={sent ? "success.dark" : "warning.dark"}
+              >
+                {sent ? "SMS delivered successfully" : "SMS delivery failed"}
+              </Typography>
+            </Box>
+            {sent && (
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 3,
+                  ml: 4,
+                }}
+              >
+                {result.sms_sender_id && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Sender ID
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {result.sms_sender_id}
+                    </Typography>
+                  </Box>
+                )}
+                {result.sms_response?.SMSMessageData?.Recipients && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Recipient
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {
+                        result.sms_response.SMSMessageData.Recipients[0]
+                          ?.number
+                      }
+                    </Typography>
+                  </Box>
+                )}
+                {result.sms_response?.SMSMessageData?.Recipients && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Status
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {
+                        result.sms_response.SMSMessageData.Recipients[0]
+                          ?.status
+                      }
+                      {result.sms_response.SMSMessageData.Recipients[0]
+                        ?.cost && (
+                        <span>
+                          {" "}
+                          &middot;{" "}
+                          {
+                            result.sms_response.SMSMessageData.Recipients[0]
+                              ?.cost
+                          }
+                        </span>
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+            {!sent && result.sms_error && (
+              <Typography variant="body2" color="warning.dark" sx={{ ml: 4 }}>
+                {result.sms_error}
+              </Typography>
+            )}
+          </Box>
         )}
       </Box>
     );
