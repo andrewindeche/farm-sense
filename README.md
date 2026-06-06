@@ -62,9 +62,14 @@ Create `backend/.env`:
 WEATHER_API_KEY=your_weatherai_key
 AFRICASTALKING_USERNAME=sandbox
 AFRICASTALKING_API_KEY=your_africastalking_api_key
-AFRICASTALKING_SENDER_ID=FARMSENSE
+AFRICASTALKING_SENDER_ID=sandbox
 FARMER_PHONE=+2547XXXXXXXX
 ```
+
+- `WEATHER_API_KEY` must be a WeatherAI key, not an Africa's Talking key.
+- Africa's Talking keys usually start with `atsk_`; WeatherAI keys use a different prefix.
+- Use `AFRICASTALKING_SENDER_ID=sandbox` when testing with the Africa's Talking sandbox account.
+- For a live Africa's Talking account, set `AFRICASTALKING_SENDER_ID` to your approved sender ID.
 
 4. Run the backend
 
@@ -90,7 +95,8 @@ uvicorn app.main:app --reload --port 8001
 
 **Crop Advice**
 - `POST /api/advice/request` — request a crop recommendation and send SMS
-  - body: `{ "lat": -1.2921, "lon": 36.8219 }`
+  - body: `{ "lat": -1.2921, "lon": 36.8219, "farmer_phone": "+254712345678" }`
+  - if `farmer_phone` is omitted, the app uses the phone number in `backend/.env`
   - returns a fallback crop recommendation text if AI is unavailable
 
 **SMS Notifications (Africa's Talking)**
