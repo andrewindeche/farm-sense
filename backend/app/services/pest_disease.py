@@ -1,0 +1,54 @@
+from __future__ import annotations
+
+from typing import Any
+
+
+class PestDiseaseService:
+    def suggest(self, weather: dict[str, Any]) -> str:
+        current = weather.get("current", {})
+        temp = current.get("temp_c") or current.get("temperature") or 0
+        humidity = current.get("humidity") or current.get("humid") or 0
+        precipitation = current.get("precip_mm") or current.get("rain") or 0
+        condition = str(current.get("condition", {}).get("text", "")).lower()
+
+        issues = []
+        reasons = []
+
+        if humidity >= 80 and temp >= 25:
+            issues = ["leaf spot and blight", "powdery mildew", "rust diseases"]
+            reasons.append("very humid and warm")
+        elif humidity >= 80 and temp < 25:
+            issues = ["root rot", "bacterial wilt", "downy mildew"]
+            reasons.append("very humid and cool")
+        elif humidity >= 60 and temp >= 25:
+            issues = ["aphids", "whiteflies", "armyworms"]
+            reasons.append("warm and humid")
+        elif humidity < 40 and temp >= 30:
+            issues = ["spider mites", "thrips", "stem borers"]
+            reasons.append("hot and dry")
+        elif precipitation >= 5 and temp >= 20:
+            issues = ["black sigatoka", "leaf rust", "downy mildew"]
+            reasons.append("steady rain and warmth")
+        else:
+            issues = ["general leaf spot", "mild fungal diseases", "sap-sucking insects"]
+            reasons.append("moderate weather conditions")
+
+        if "rain" in condition or precipitation >= 3:
+            reasons.append("rainy weather")
+
+        if humidity >= 85:
+            reasons.append("high humidity")
+        elif humidity <= 35:
+            reasons.append("low humidity")
+
+        issues_text = ", ".join(issues)
+        reason_text = ", ".join(reasons)
+
+        return (
+            f"Based on the current weather ({reason_text}), watch for {issues_text}. "
+            "Inspect crops regularly, remove infected material, maintain good airflow, "
+            "and use resistant varieties or approved treatments as needed."
+        )
+
+
+pest_disease_service = PestDiseaseService()
