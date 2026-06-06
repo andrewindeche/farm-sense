@@ -68,6 +68,19 @@ def test_send_sms_omits_sender_id_when_using_sandbox_username(monkeypatch):
     assert result == fake_sms.send.return_value
 
 
+def test_send_sms_raises_when_message_empty(monkeypatch):
+    fake_sdk = MagicMock()
+    fake_sms = MagicMock()
+    fake_sdk.SMS = fake_sms
+    monkeypatch.setattr("app.services.africastalking.africastalking", fake_sdk)
+    monkeypatch.setattr(settings, "farmer_phone", "+254700000000")
+
+    service = AfricasTalkingService()
+
+    with pytest.raises(ValueError, match="message is empty"):
+        service.send_sms("", to="+254711111111")
+
+
 def test_send_sms_uses_recipient_list(monkeypatch):
     fake_sdk = MagicMock()
     fake_sms = MagicMock()
