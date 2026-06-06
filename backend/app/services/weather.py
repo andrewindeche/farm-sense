@@ -9,17 +9,17 @@ class WeatherService:
         self.api_key = settings.weather_api_key
 
     async def _get(self, path: str, params: dict | None = None) -> dict:
-        params = {"key": self.api_key, **(params or {})}
-        async with AsyncClient(base_url=self.base_url) as client:
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        async with AsyncClient(base_url=self.base_url, headers=headers) as client:
             resp = await client.get(path, params=params)
             resp.raise_for_status()
             return resp.json()
 
-    async def get_current(self, location: str) -> dict:
-        return await self._get("/current.json", {"q": location})
+    async def get_current(self, lat: float, lon: float) -> dict:
+        return await self._get("/current", {"lat": lat, "lon": lon})
 
-    async def get_forecast(self, location: str, days: int = 3) -> dict:
-        return await self._get("/forecast.json", {"q": location, "days": days})
+    async def get_forecast(self, lat: float, lon: float, days: int = 3) -> dict:
+        return await self._get("/forecast", {"lat": lat, "lon": lon, "days": days})
 
 
 weather_service = WeatherService()
