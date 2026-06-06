@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/farmsense"
 
-    gemini_api_key: str = ""
+    frontend_url: str = "http://localhost:5173"
 
     weather_api_key: str = ""
     weather_api_base_url: str = "https://api.weather-ai.co/v1"
