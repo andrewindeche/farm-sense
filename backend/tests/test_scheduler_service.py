@@ -47,7 +47,7 @@ def test_subscribers_returns_copy():
 async def test_deliver_all_no_subscribers():
     svc = SchedulerService()
     result = await svc.deliver_all()
-    assert result == {"delivered": 0, "total": 0}
+    assert result == {"delivered": 0, "total": 0, "results": []}
 
 
 @pytest.mark.asyncio
@@ -73,11 +73,18 @@ async def test_deliver_all_sends_sms_for_each_subscriber():
     ) as mock_sms:
         result = await svc.deliver_all()
 
-    assert result == {"delivered": 1, "total": 1}
+    assert result["delivered"] == 1
+    assert result["total"] == 1
+    assert len(result["results"]) == 1
+    r = result["results"][0]
+    assert r["phone"] == "+254700000001"
+    assert r["sms_status"] == "sent"
+    assert "Plant maize." in r["crop_advice"]
+    assert "Watch for aphids." in r["pest_alert"]
+    assert "Harvest now." in r["harvest_reminder"]
     mock_sms.assert_called_once()
     args, kwargs = mock_sms.call_args
-    message = args[0]
-    assert "Plant maize." in message
-    assert "Watch for aphids." in message
-    assert "Harvest now." in message
     assert kwargs["to"] == "+254700000001"
+    assert "Plant maize." in args[0]
+    assert "Watch for aphids." in args[0]
+    assert "Harvest now." in args[0]

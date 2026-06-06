@@ -371,7 +371,11 @@ async def test_scheduler_deliver_now(client):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data == {"delivered": 1, "total": 1}
+    assert data["delivered"] == 1
+    assert data["total"] == 1
+    assert len(data["results"]) == 1
+    assert data["results"][0]["phone"] == "+254700000001"
+    assert data["results"][0]["sms_status"] == "sent"
 
 
 @pytest.mark.asyncio

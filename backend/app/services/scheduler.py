@@ -53,7 +53,7 @@ class SchedulerService:
             })
             logger.info("Seeded default subscriber: %s", phone)
 
-    async def _deliver_to_subscriber(self, sub: dict[str, Any]) -> None:
+    async def _deliver_to_subscriber(self, sub: dict[str, Any]) -> dict[str, Any] | None:
         lat = sub["lat"]
         lon = sub["lon"]
         phone = sub["phone"]
@@ -62,7 +62,7 @@ class SchedulerService:
             weather = await weather_service.get_current(lat, lon)
         except Exception as e:
             logger.error("Weather fetch failed for %s: %s", phone, e)
-            return
+            return None
 
         try:
             crop_advice = crop_advice_service.suggest(weather)
@@ -85,27 +85,42 @@ class SchedulerService:
         message_parts = [p for p in [crop_advice, pest_alert, harvest_reminder] if p]
         if not message_parts:
             logger.warning("No advice generated for %s", phone)
-            return
+            return None
 
         message = "\n\n".join(message_parts)
 
+        sms_status = "failed"
         try:
             africastalking_service.send_sms(message, to=phone)
             logger.info("Advice delivered to %s", phone)
+            sms_status = "sent"
         except Exception as e:
             logger.error("SMS send failed for %s: %s", phone, e)
+
+        return {
+            "phone": phone,
+            "crop_advice": crop_advice,
+            "pest_alert": pest_alert,
+            "harvest_reminder": harvest_reminder,
+            "sms_status": sms_status,
+        }
 
     async def deliver_all(self) -> dict[str, Any]:
         if not self._subscribers:
             logger.info("No subscribers to deliver to")
-            return {"delivered": 0, "total": 0}
+            return {"delivered": 0, "total": 0, "results": []}
 
-        success = 0
+        results = []
         for sub in list(self._subscribers):
-            await self._deliver_to_subscriber(sub)
-            success += 1
+            result = await self._deliver_to_subscriber(sub)
+            if result:
+                results.append(result)
 
-        return {"delivered": success, "total": len(self._subscribers)}
+        return {
+            "delivered": len(results),
+            "total": len(self._subscribers),
+            "results": results,
+        }
 
     def start(self) -> None:
         if self._scheduler and self._scheduler.running:
