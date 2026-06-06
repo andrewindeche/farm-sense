@@ -125,6 +125,27 @@ async def test_notify_farmer_route_sends_message(client):
 
 
 @pytest.mark.asyncio
+async def test_advice_request_sends_fallback_recommendation(client):
+    with patch(
+        "app.services.weather.weather_service.get_current"
+    ) as mock_weather, patch(
+        "app.services.africastalking.africastalking_service.send_sms"
+    ) as mock_send:
+        mock_weather.return_value = {"current": {"temp_c": 30, "condition": {"text": "Sunny"}, "humidity": 25, "precip_mm": 0}}
+        mock_send.return_value = {"status": "sent"}
+
+        resp = await client.post(
+            "/api/advice/request",
+            json={"lat": -1.2921, "lon": 36.8219},
+        )
+
+    assert resp.status_code == 200
+    assert resp.json()["sent"] is True
+    assert "recommendation" in resp.json()
+    assert mock_send.called
+
+
+@pytest.mark.asyncio
 async def test_notify_farmer_route_returns_502_on_error(client):
     with patch(
         "app.services.africastalking.africastalking_service.send_sms"

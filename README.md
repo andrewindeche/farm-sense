@@ -45,19 +45,19 @@ git clone https://github.com/andrewindeche/farm-sense.git
 cd farm-sense
 ```
 
-2. Set Up Python Backend (FastAPI)
-```bash
-python3 -m venv venv
-source venv/bin/activate   # Linux/Mac
-venv\Scripts\activate      # Windows
-```
+2. Set Up Backend (FastAPI + WeatherAI)
 
-3. Install dependencies
 ```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate   # Linux/Mac
+.venv\Scripts\activate      # Windows
 pip install -r requirements.txt
 ```
 
-4. Environment variables
+3. Environment variables
+
+Create `backend/.env`:
 ```bash
 WEATHER_API_KEY=your_weatherai_key
 AFRICASTALKING_USERNAME=sandbox
@@ -66,28 +66,47 @@ AFRICASTALKING_SENDER_ID=FARMSENSE
 FARMER_PHONE=+2547XXXXXXXX
 ```
 
-5. Run the backend
+4. Run the backend
+
 ```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8001
 ```
 
-6. Backend API routes
-- `GET /api/weather/current?lat=<lat>&lon=<lon>`
-- `GET /api/weather/forecast?lat=<lat>&lon=<lon>&days=<days>`
-- `POST /api/notify/farmer?message=<text>`
-- `POST /api/auth/register` with JSON `{ "username": "user", "password": "pass" }`
-- `POST /api/auth/login` with JSON `{ "username": "user", "password": "pass" }`
-- `GET /api/auth/me` with header `Authorization: Bearer <token>`
-- `POST /api/auth/logout` with header `Authorization: Bearer <token>`
+5. Backend API Routes
 
-7. Postman usage
-- Do not send secret keys from Postman.
-- Your `.env` file on the server provides the WeatherAI and Africa's Talking credentials.
-- In Postman, only send query parameters for the endpoints above.
+**Health**
+- `GET /` — root check
+- `GET /health` — health status
+
+**Authentication**
+- `POST /api/auth/register` — body: `{"username":"user","password":"pass"}`
+- `POST /api/auth/login` — body: `{"username":"user","password":"pass"}`
+- `GET /api/auth/me` — header: `Authorization: Bearer <token>`
+- `POST /api/auth/logout` — header: `Authorization: Bearer <token>`
+
+**Weather (WeatherAI)**
+- `GET /api/weather/current?lat=-1.2921&lon=36.8219` — current conditions by coordinates
+- `GET /api/weather/forecast?lat=-1.2921&lon=36.8219&days=7` — forecast (1-7 days)
+
+**Crop Advice**
+- `POST /api/advice/request` — request a crop recommendation and send SMS
+  - body: `{ "lat": -1.2921, "lon": 36.8219 }`
+  - returns a fallback crop recommendation text if AI is unavailable
+
+**SMS Notifications (Africa's Talking)**
+- `POST /api/notify/farmer?message=Water+your+crops` — send SMS to farmer
+
+6. Run tests
+
+```bash
+.venv/bin/python -m pytest -q
+```
+
+7. Postman Usage
+
+- API keys are loaded from `backend/.env` on the server
+- Do not send credentials in Postman headers
+- Send only query parameters and JSON payloads to public routes
 
 8. Set Up Frontend Dashboard
 React
@@ -98,7 +117,7 @@ npm install axios
 npm start
 ```
 
-7. Schedule Locally (cron job)
+9. Schedule Locally (cron job)
 ```bash 
 crontab -e
 ```
