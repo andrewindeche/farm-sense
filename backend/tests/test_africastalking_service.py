@@ -48,6 +48,26 @@ def test_send_sms_uses_configured_sender_and_string_recipient(monkeypatch):
     assert result == fake_sms.send.return_value
 
 
+def test_send_sms_uses_sandbox_sender_id_when_using_sandbox_username(monkeypatch):
+    fake_sdk = MagicMock()
+    fake_sms = MagicMock()
+    fake_sdk.SMS = fake_sms
+    monkeypatch.setattr("app.services.africastalking.africastalking", fake_sdk)
+    monkeypatch.setattr(settings, "africastalking_username", "sandbox")
+    monkeypatch.setattr(settings, "africastalking_sender_id", "FARMSENSE")
+    monkeypatch.setattr(settings, "farmer_phone", "+254700000000")
+
+    service = AfricasTalkingService()
+    result = service.send_sms("Hello sandbox", to="+254711111111")
+
+    fake_sms.send.assert_called_once_with(
+        "Hello sandbox",
+        ["+254711111111"],
+        sender_id="sandbox",
+    )
+    assert result == fake_sms.send.return_value
+
+
 def test_send_sms_uses_recipient_list(monkeypatch):
     fake_sdk = MagicMock()
     fake_sms = MagicMock()
