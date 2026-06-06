@@ -2,15 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.services.ai import ai_service
-
 
 class PestDiseaseService:
-    async def suggest(self, weather: dict[str, Any], use_ai: bool = False) -> str:
-        if use_ai:
-            result = await ai_service.suggest_pest(weather)
-            if result:
-                return result
+    async def suggest(self, weather: dict[str, Any]) -> str:
         return self._suggest_rules(weather)
 
     def _suggest_rules(self, weather: dict[str, Any]) -> str:
