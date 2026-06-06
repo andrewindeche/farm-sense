@@ -78,18 +78,18 @@ uvicorn app.main:app --reload --port 8001
 - `GET /` — root check
 - `GET /health` — health status
 
+**Authentication**
+- `POST /api/auth/register` — body: `{"username":"user","password":"pass"}`
+- `POST /api/auth/login` — body: `{"username":"user","password":"pass"}`
+- `GET /api/auth/me` — header: `Authorization: Bearer <token>`
+- `POST /api/auth/logout` — header: `Authorization: Bearer <token>`
+
 **Weather (WeatherAI)**
 - `GET /api/weather/current?lat=-1.2921&lon=36.8219` — current conditions by coordinates
 - `GET /api/weather/forecast?lat=-1.2921&lon=36.8219&days=7` — forecast (1-7 days)
 
 **SMS Notifications (Africa's Talking)**
 - `POST /api/notify/farmer?message=Water+your+crops` — send SMS to farmer
-
-**Authentication**
-- `POST /api/auth/register` — body: `{"username":"user","password":"pass"}`
-- `POST /api/auth/login` — body: `{"username":"user","password":"pass"}`
-- `GET /api/auth/me` — header: `Authorization: Bearer <token>`
-- `POST /api/auth/logout` — header: `Authorization: Bearer <token>`
 
 6. Run tests
 
