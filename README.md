@@ -111,6 +111,23 @@ uvicorn app.main:app --reload --port 8001
 
 6. Backend API Routes
 
+**Rate Limiting**
+All endpoints are rate-limited per IP address to prevent abuse (configurable via `slowapi`):
+- `GET /`, `GET /health` — 100 requests/minute
+- `POST /api/auth/register` — 10 requests/minute
+- `POST /api/auth/login` — 20 requests/minute
+- `GET /api/auth/me`, `POST /api/auth/logout` — 30 requests/minute
+- `GET /api/weather/current`, `GET /api/weather/forecast` — 30 requests/minute (protects WeatherAI API quota)
+- `POST /api/advice/request`, `/api/advice/pest-disease`, `/api/advice/harvest-reminder` — 10 requests/minute (each triggers an SMS)
+- `POST /api/notify/farmer` — 5 requests/minute (each sends an SMS)
+- `GET /api/scheduler/subscribers` — 30 requests/minute
+- `POST /api/scheduler/subscribe`, `/api/scheduler/unsubscribe` — 20 requests/minute
+- `POST /api/scheduler/deliver-now` — 3 requests/minute (sends SMS to all subscribers)
+
+Exceeding a rate limit returns `429 Too Many Requests`.
+
+
+
 **Health**
 - `GET /` — root check
 - `GET /health` — health status

@@ -10,3 +10,4 @@ apscheduler
 sqlalchemy[asyncio]
 asyncpg
 aiosqlite
+slowapi

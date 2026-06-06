@@ -1,6 +1,14 @@
+import logging
+
 from httpx import AsyncClient
 
+from app.cache import cache
 from app.config import settings
+
+logger = logging.getLogger(__name__)
+
+_CURRENT_TTL = 600
+_FORECAST_TTL = 1800
 
 
 class WeatherService:
@@ -23,10 +31,24 @@ class WeatherService:
             return resp.json()
 
     async def get_current(self, lat: float, lon: float) -> dict:
-        return await self._get("/current", {"lat": lat, "lon": lon})
+        key = f"weather:current:{lat}:{lon}"
+        cached = await cache.get(key)
+        if cached is not None:
+            logger.debug("Cache hit for %s", key)
+            return cached
+        result = await self._get("/current", {"lat": lat, "lon": lon})
+        await cache.set(key, result, ttl=_CURRENT_TTL)
+        return result
 
     async def get_forecast(self, lat: float, lon: float, days: int = 3) -> dict:
-        return await self._get("/forecast", {"lat": lat, "lon": lon, "days": days})
+        key = f"weather:forecast:{lat}:{lon}:{days}"
+        cached = await cache.get(key)
+        if cached is not None:
+            logger.debug("Cache hit for %s", key)
+            return cached
+        result = await self._get("/forecast", {"lat": lat, "lon": lon, "days": days})
+        await cache.set(key, result, ttl=_FORECAST_TTL)
+        return result
 
 
 weather_service = WeatherService()
