@@ -4,7 +4,10 @@ from typing import Any
 
 
 class CropAdviceService:
-    def suggest(self, weather: dict[str, Any]) -> str:
+    async def suggest(self, weather: dict[str, Any]) -> str:
+        return self._suggest_rules(weather)
+
+    def _suggest_rules(self, weather: dict[str, Any]) -> str:
         current = weather.get("current", {})
         temp = current.get("temp_c") if "temp_c" in current else current.get("temperature", 0)
         condition = str(current.get("condition", {}).get("text", "")).lower()

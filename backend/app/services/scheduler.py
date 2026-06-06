@@ -118,19 +118,19 @@ class SchedulerService:
             return None
 
         try:
-            crop_advice = crop_advice_service.suggest(weather)
+            crop_advice = await crop_advice_service.suggest(weather)
         except Exception as e:
             logger.error("Crop advice failed for %s: %s", phone, e)
             crop_advice = ""
 
         try:
-            pest_alert = pest_disease_service.suggest(weather)
+            pest_alert = await pest_disease_service.suggest(weather)
         except Exception as e:
             logger.error("Pest/disease advice failed for %s: %s", phone, e)
             pest_alert = ""
 
         try:
-            harvest_reminder = harvest_reminder_service.suggest(weather)
+            harvest_reminder = await harvest_reminder_service.suggest(weather)
         except Exception as e:
             logger.error("Harvest reminder failed for %s: %s", phone, e)
             harvest_reminder = ""

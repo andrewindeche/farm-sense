@@ -2,8 +2,14 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
+
+from app.models import (
+    AdviceRequestPayload,
+    AuthPayload,
+    SubscribePayload,
+    UnsubscribePayload,
+)
 from slowapi.util import get_remote_address
 
 logging.basicConfig(level=logging.INFO)
@@ -35,27 +41,6 @@ app = FastAPI(title="FarmSense API", lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(429, _rate_limit_exceeded_handler)
 
-
-class AuthPayload(BaseModel):
-    username: str
-    password: str
-
-
-class AdviceRequestPayload(BaseModel):
-    lat: float
-    lon: float
-    use_ai: bool = False
-    farmer_phone: str | None = None
-
-
-class SubscribePayload(BaseModel):
-    lat: float
-    lon: float
-    phone: str
-
-
-class UnsubscribePayload(BaseModel):
-    phone: str
 
 
 def _get_bearer_token(authorization: str | None) -> str:
@@ -147,11 +132,7 @@ async def request_advice(request: Request, payload: AdviceRequestPayload):
         logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
         raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
 
-    try:
-        recommendation = crop_advice_service.suggest(weather)
-    except Exception as e:
-        logger.error("Crop advice failed: %s: %s", type(e).__name__, e)
-        raise HTTPException(status_code=502, detail=f"Crop advice error: {e}")
+    recommendation = await crop_advice_service.suggest(weather)
 
     try:
         sms_response = africastalking_service.send_sms(recommendation, to=payload.farmer_phone)
@@ -179,11 +160,7 @@ async def pest_disease_advice(request: Request, payload: AdviceRequestPayload):
         logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
         raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
 
-    try:
-        alert = pest_disease_service.suggest(weather)
-    except Exception as e:
-        logger.error("Pest/disease advice failed: %s: %s", type(e).__name__, e)
-        raise HTTPException(status_code=502, detail=f"Pest/disease advice error: {e}")
+    alert = await pest_disease_service.suggest(weather)
 
     try:
         sender_id = africastalking_service.get_sender_id()
@@ -212,11 +189,7 @@ async def harvest_reminder(request: Request, payload: AdviceRequestPayload):
         logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
         raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
 
-    try:
-        reminder = harvest_reminder_service.suggest(weather)
-    except Exception as e:
-        logger.error("Harvest reminder failed: %s: %s", type(e).__name__, e)
-        raise HTTPException(status_code=502, detail=f"Harvest reminder error: {e}")
+    reminder = await harvest_reminder_service.suggest(weather)
 
     try:
         sender_id = africastalking_service.get_sender_id()

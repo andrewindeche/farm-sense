@@ -31,7 +31,7 @@
 | Step  | Feature                       | Role                                                     |
 | ----- | ----------------------------- | -------------------------------------------------------- |
 | 1.    |     WeatherAI                 | Fetch weather forecast based on GET request or Cronjob   |
-| 2.    |     AI Agent/FastAPI          | Recieves data from Weather AI,generates Farming Advice   |
+| 2.    |     FastAPI                   | Receives weather data, generates rule-based farming advice |
 | 3.    |     Callback/Webhook Layer    | Sends AI output to SMS Gateway                           |
 | 4.    |     SMS Gateway               | Delivers message to farmer's device                      |
 | 5.    |     Dashboard                 | Displaye forecast, AI advice and SMS logs                |
@@ -143,10 +143,9 @@ Exceeding a rate limit returns `429 Too Many Requests`.
 - `GET /api/weather/forecast?lat=-1.2921&lon=36.8219&days=7` — forecast (1-7 days)
 
 **Crop Advice**
-- `POST /api/advice/request` — request a crop recommendation and send SMS
+- `POST /api/advice/request` — request crop recommendation and send SMS
   - body: `{ "lat": -1.2921, "lon": 36.8219, "farmer_phone": "+254712345678" }`
   - if `farmer_phone` is omitted, the app uses the phone number in `backend/.env`
-  - returns a fallback crop recommendation text if AI is unavailable
 
 **SMS Notifications (Africa's Talking)**
 - `POST /api/notify/farmer?message=Water+your+crops` — send SMS to farmer
