@@ -19,11 +19,10 @@ class AfricasTalkingService:
         else:
             self._sms = None
 
-    def get_sender_id(self) -> str:
-        sender_id = settings.africastalking_sender_id
+    def get_sender_id(self) -> str | None:
         if settings.africastalking_username.lower() == "sandbox":
-            sender_id = "sandbox"
-        return sender_id
+            return None
+        return settings.africastalking_sender_id or None
 
     def send_sms(self, message: str, to: Optional[List[str] | str] = None) -> dict:
         recipients = []
@@ -41,7 +40,8 @@ class AfricasTalkingService:
             raise ValueError("No recipient phone numbers configured/provided")
 
         sender_id = self.get_sender_id()
-        resp = self._sms.send(message, recipients, sender_id=sender_id)
+        kwargs = {"sender_id": sender_id} if sender_id else {}
+        resp = self._sms.send(message, recipients, **kwargs)
         return resp
 
 
