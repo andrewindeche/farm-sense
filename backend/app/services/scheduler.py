@@ -5,8 +5,10 @@ from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from sqlalchemy import select
 
 from app.config import settings
+from app.database import Subscriber, async_session
 from app.services.africastalking import africastalking_service
 from app.services.crop_advice import crop_advice_service
 from app.services.harvest_reminder import harvest_reminder_service
@@ -18,40 +20,60 @@ logger = logging.getLogger(__name__)
 
 class SchedulerService:
     def __init__(self) -> None:
-        self._subscribers: list[dict[str, Any]] = []
         self._scheduler: AsyncIOScheduler | None = None
 
-    @property
-    def subscribers(self) -> list[dict[str, Any]]:
-        return list(self._subscribers)
+    async def get_subscribers(self) -> list[dict[str, Any]]:
+        async with async_session() as session:
+            result = await session.execute(select(Subscriber))
+            return [
+                {"lat": s.lat, "lon": s.lon, "phone": s.phone}
+                for s in result.scalars().all()
+            ]
 
-    def add_subscriber(self, lat: float, lon: float, phone: str) -> dict:
-        for sub in self._subscribers:
-            if sub["phone"] == phone:
-                sub["lat"] = lat
-                sub["lon"] = lon
+    async def add_subscriber(self, lat: float, lon: float, phone: str) -> dict:
+        async with async_session() as session:
+            result = await session.execute(
+                select(Subscriber).where(Subscriber.phone == phone)
+            )
+            existing = result.scalar_one_or_none()
+            if existing:
+                existing.lat = lat
+                existing.lon = lon
+                await session.commit()
                 return {"phone": phone, "lat": lat, "lon": lon, "status": "updated"}
 
-        self._subscribers.append({"lat": lat, "lon": lon, "phone": phone})
-        return {"phone": phone, "lat": lat, "lon": lon, "status": "subscribed"}
+            session.add(Subscriber(phone=phone, lat=lat, lon=lon))
+            await session.commit()
+            return {"phone": phone, "lat": lat, "lon": lon, "status": "subscribed"}
 
-    def remove_subscriber(self, phone: str) -> dict:
-        for i, sub in enumerate(self._subscribers):
-            if sub["phone"] == phone:
-                self._subscribers.pop(i)
-                return {"phone": phone, "status": "unsubscribed"}
+    async def remove_subscriber(self, phone: str) -> dict:
+        async with async_session() as session:
+            result = await session.execute(
+                select(Subscriber).where(Subscriber.phone == phone)
+            )
+            sub = result.scalar_one_or_none()
+            if not sub:
+                return {"phone": phone, "status": "not_found"}
 
-        return {"phone": phone, "status": "not_found"}
+            await session.delete(sub)
+            await session.commit()
+            return {"phone": phone, "status": "unsubscribed"}
 
-    def _seed_default(self) -> None:
+    async def _seed_default(self) -> None:
         phone = settings.farmer_phone
-        if phone and not any(s["phone"] == phone for s in self._subscribers):
-            self._subscribers.append({
-                "lat": settings.farmer_lat,
-                "lon": settings.farmer_lon,
-                "phone": phone,
-            })
-            logger.info("Seeded default subscriber: %s", phone)
+        if not phone:
+            return
+
+        async with async_session() as session:
+            result = await session.execute(
+                select(Subscriber).where(Subscriber.phone == phone)
+            )
+            if not result.scalar_one_or_none():
+                session.add(
+                    Subscriber(phone=phone, lat=settings.farmer_lat, lon=settings.farmer_lon)
+                )
+                await session.commit()
+                logger.info("Seeded default subscriber: %s", phone)
 
     async def _deliver_to_subscriber(self, sub: dict[str, Any]) -> dict[str, Any] | None:
         lat = sub["lat"]
@@ -106,30 +128,33 @@ class SchedulerService:
         }
 
     async def deliver_all(self) -> dict[str, Any]:
-        if not self._subscribers:
+        subscribers = await self.get_subscribers()
+
+        if not subscribers:
             logger.info("No subscribers to deliver to")
             return {"delivered": 0, "total": 0, "results": []}
 
         results = []
-        for sub in list(self._subscribers):
+        for sub in subscribers:
             result = await self._deliver_to_subscriber(sub)
             if result:
                 results.append(result)
 
         return {
             "delivered": len(results),
-            "total": len(self._subscribers),
+            "total": len(subscribers),
             "results": results,
         }
 
-    def start(self) -> None:
+    async def start(self) -> None:
         if self._scheduler and self._scheduler.running:
             logger.warning("Scheduler already running")
             return
 
-        self._seed_default()
+        await self._seed_default()
 
-        if not self._subscribers:
+        subscribers = await self.get_subscribers()
+        if not subscribers:
             logger.info("No subscribers configured — scheduler will not start")
             return
 
@@ -155,7 +180,11 @@ class SchedulerService:
             replace_existing=True,
         )
         self._scheduler.start()
-        logger.info("Scheduler started with cron: %s (%d subscriber(s))", cron, len(self._subscribers))
+        logger.info(
+            "Scheduler started with cron: %s (%d subscriber(s))",
+            cron,
+            len(subscribers),
+        )
 
     def stop(self) -> None:
         if self._scheduler and self._scheduler.running:

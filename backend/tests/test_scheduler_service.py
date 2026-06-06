@@ -5,42 +5,41 @@ import pytest
 from app.services.scheduler import SchedulerService
 
 
-def test_add_subscriber_adds_new():
+@pytest.mark.asyncio
+async def test_add_subscriber_adds_new():
     svc = SchedulerService()
-    result = svc.add_subscriber(-1.29, 36.82, "+254700000001")
+    result = await svc.add_subscriber(-1.29, 36.82, "+254700000001")
     assert result["status"] == "subscribed"
-    assert len(svc.subscribers) == 1
+    subs = await svc.get_subscribers()
+    assert len(subs) == 1
 
 
-def test_add_subscriber_updates_existing():
+@pytest.mark.asyncio
+async def test_add_subscriber_updates_existing():
     svc = SchedulerService()
-    svc.add_subscriber(-1.29, 36.82, "+254700000001")
-    result = svc.add_subscriber(-1.30, 36.83, "+254700000001")
+    await svc.add_subscriber(-1.29, 36.82, "+254700000001")
+    result = await svc.add_subscriber(-1.30, 36.83, "+254700000001")
     assert result["status"] == "updated"
-    assert len(svc.subscribers) == 1
-    assert svc.subscribers[0]["lat"] == -1.30
+    subs = await svc.get_subscribers()
+    assert len(subs) == 1
+    assert subs[0]["lat"] == -1.30
 
 
-def test_remove_subscriber_removes():
+@pytest.mark.asyncio
+async def test_remove_subscriber_removes():
     svc = SchedulerService()
-    svc.add_subscriber(-1.29, 36.82, "+254700000001")
-    result = svc.remove_subscriber("+254700000001")
+    await svc.add_subscriber(-1.29, 36.82, "+254700000001")
+    result = await svc.remove_subscriber("+254700000001")
     assert result["status"] == "unsubscribed"
-    assert len(svc.subscribers) == 0
+    subs = await svc.get_subscribers()
+    assert len(subs) == 0
 
 
-def test_remove_subscriber_not_found():
+@pytest.mark.asyncio
+async def test_remove_subscriber_not_found():
     svc = SchedulerService()
-    result = svc.remove_subscriber("+254700009999")
+    result = await svc.remove_subscriber("+254700009999")
     assert result["status"] == "not_found"
-
-
-def test_subscribers_returns_copy():
-    svc = SchedulerService()
-    svc.add_subscriber(-1.29, 36.82, "+254700000001")
-    subs = svc.subscribers
-    subs.clear()
-    assert len(svc.subscribers) == 1
 
 
 @pytest.mark.asyncio
@@ -53,7 +52,7 @@ async def test_deliver_all_no_subscribers():
 @pytest.mark.asyncio
 async def test_deliver_all_sends_sms_for_each_subscriber():
     svc = SchedulerService()
-    svc.add_subscriber(-1.29, 36.82, "+254700000001")
+    await svc.add_subscriber(-1.29, 36.82, "+254700000001")
 
     with patch(
         "app.services.scheduler.weather_service.get_current",

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/farmsense"
+
     weather_api_key: str = ""
     weather_api_base_url: str = "https://api.weather-ai.co/v1"
 

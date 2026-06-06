@@ -14,12 +14,14 @@ from .services.africastalking import africastalking_service
 from .services.crop_advice import crop_advice_service
 from .services.pest_disease import pest_disease_service
 from .services.harvest_reminder import harvest_reminder_service
+from .database import init_db
 from .services.scheduler import scheduler_service
 
 
 @asynccontextmanager
 async def lifespan(app):
-    scheduler_service.start()
+    await init_db()
+    await scheduler_service.start()
     yield
     scheduler_service.stop()
 
@@ -71,7 +73,7 @@ async def health():
 @app.post("/api/auth/register")
 async def register(payload: AuthPayload):
     try:
-        return auth_service.register(payload.username, payload.password)
+        return await auth_service.register(payload.username, payload.password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -79,7 +81,7 @@ async def register(payload: AuthPayload):
 @app.post("/api/auth/login")
 async def login(payload: AuthPayload):
     try:
-        token = auth_service.authenticate(payload.username, payload.password)
+        token = await auth_service.authenticate(payload.username, payload.password)
         return {"access_token": token, "token_type": "bearer"}
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
@@ -89,7 +91,7 @@ async def login(payload: AuthPayload):
 async def me(authorization: str | None = Header(None)):
     try:
         token = _get_bearer_token(authorization)
-        username = auth_service.validate_token(token)
+        username = await auth_service.validate_token(token)
         return {"username": username}
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
@@ -99,7 +101,7 @@ async def me(authorization: str | None = Header(None)):
 async def logout(authorization: str | None = Header(None)):
     try:
         token = _get_bearer_token(authorization)
-        return auth_service.logout(token)
+        return await auth_service.logout(token)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
@@ -217,13 +219,13 @@ async def harvest_reminder(payload: AdviceRequestPayload):
 
 @app.get("/api/scheduler/subscribers")
 async def list_subscribers():
-    return {"subscribers": scheduler_service.subscribers}
+    return {"subscribers": await scheduler_service.get_subscribers()}
 
 
 @app.post("/api/scheduler/subscribe")
 async def subscribe(payload: SubscribePayload):
     try:
-        return scheduler_service.add_subscriber(payload.lat, payload.lon, payload.phone)
+        return await scheduler_service.add_subscriber(payload.lat, payload.lon, payload.phone)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -231,7 +233,7 @@ async def subscribe(payload: SubscribePayload):
 @app.post("/api/scheduler/unsubscribe")
 async def unsubscribe(payload: UnsubscribePayload):
     try:
-        return scheduler_service.remove_subscriber(payload.phone)
+        return await scheduler_service.remove_subscriber(payload.phone)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

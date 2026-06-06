@@ -1,41 +1,53 @@
 from __future__ import annotations
 
 import secrets
-from typing import Dict
+
+from sqlalchemy import select
+
+from app.database import Token, User, async_session
 
 
 class AuthService:
-    def __init__(self) -> None:
-        self.users: Dict[str, str] = {}
-        self.tokens: Dict[str, str] = {}
+    async def register(self, username: str, password: str) -> dict:
+        async with async_session() as session:
+            result = await session.execute(select(User).where(User.username == username))
+            if result.scalar_one_or_none():
+                raise ValueError("username already exists")
 
-    def register(self, username: str, password: str) -> dict:
-        if username in self.users:
-            raise ValueError("username already exists")
+            session.add(User(username=username, password=password))
+            await session.commit()
+            return {"username": username, "status": "registered"}
 
-        self.users[username] = password
-        return {"username": username, "status": "registered"}
+    async def authenticate(self, username: str, password: str) -> str:
+        async with async_session() as session:
+            result = await session.execute(select(User).where(User.username == username))
+            user = result.scalar_one_or_none()
+            if not user or user.password != password:
+                raise ValueError("invalid credentials")
 
-    def authenticate(self, username: str, password: str) -> str:
-        if self.users.get(username) != password:
-            raise ValueError("invalid credentials")
+            token = secrets.token_urlsafe(32)
+            session.add(Token(token=token, username=username))
+            await session.commit()
+            return token
 
-        token = secrets.token_urlsafe(32)
-        self.tokens[token] = username
-        return token
+    async def validate_token(self, token: str) -> str:
+        async with async_session() as session:
+            result = await session.execute(select(Token).where(Token.token == token))
+            t = result.scalar_one_or_none()
+            if not t:
+                raise ValueError("invalid token")
+            return t.username
 
-    def validate_token(self, token: str) -> str:
-        username = self.tokens.get(token)
-        if not username:
-            raise ValueError("invalid token")
-        return username
+    async def logout(self, token: str) -> dict:
+        async with async_session() as session:
+            result = await session.execute(select(Token).where(Token.token == token))
+            t = result.scalar_one_or_none()
+            if not t:
+                raise ValueError("invalid token")
 
-    def logout(self, token: str) -> dict:
-        if token in self.tokens:
-            self.tokens.pop(token)
+            await session.delete(t)
+            await session.commit()
             return {"status": "logged_out"}
-
-        raise ValueError("invalid token")
 
 
 auth_service = AuthService()

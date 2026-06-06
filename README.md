@@ -13,7 +13,7 @@
 
 ## <h1> Description</h1>
 
-<p>The aim of the project is to build a mobile/web dashboard with integrated SMS notifications designed for subsistence farmers. It leverages predictive weather patterns from the Weather API to provide timely farming advice such as crop planting suggestions, irrigation reminders, pest/disease alerts, and harvesting schedules</p>
+<p>The aim of the project is to build a dashboard with integrated SMS notifications designed for subsistence farmers. It leverages predictive weather patterns from the Weather API to provide timely farming advice such as crop planting suggestions, irrigation reminders, pest/disease alerts, and harvesting schedules</p>
 
 ## <h1> Features</h1>
 
@@ -54,10 +54,41 @@ python3 -m venv .venv # Linux/Mac
 pip install -r requirements.txt
 ```
 
-3. Environment variables
+3. Set Up PostgreSQL Database
+
+Create a new PostgreSQL user and database:
+
+```bash
+sudo -u postgres psql
+```
+
+Then in the PostgreSQL shell:
+
+```sql
+-- Create new user with password
+CREATE USER farmsense_user WITH PASSWORD 'your_secure_password_here';
+
+-- Create database
+CREATE DATABASE farmsense OWNER farmsense_user;
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE farmsense TO farmsense_user;
+
+-- Exit
+\q
+```
+
+Verify the connection:
+
+```bash
+psql -U farmsense_user -d farmsense -h localhost
+```
+
+4. Environment variables
 
 Create `backend/.env`:
 ```bash
+DATABASE_URL=postgresql+asyncpg://farmsense_user:your_secure_password_here@localhost:5432/farmsense
 WEATHER_API_KEY=your_weatherai_key
 AFRICASTALKING_USERNAME=sandbox
 AFRICASTALKING_API_KEY=your_africastalking_api_key
@@ -65,18 +96,20 @@ AFRICASTALKING_SENDER_ID=AFRICASTKNG
 FARMER_PHONE=+2547XXXXXXXX
 ```
 
+Notes:
+- Replace `your_secure_password_here` with the password you set for `farmsense_user`.
 - `WEATHER_API_KEY` must be a WeatherAI key, not an Africa's Talking key.
 - Africa's Talking keys usually start with `atsk_`; WeatherAI keys use a different prefix.
 - Use `AFRICASTALKING_SENDER_ID=AFRICASTKNG` (the default sandbox sender ID) when testing with the Africa's Talking sandbox account.
 - For a live Africa's Talking account, set `AFRICASTALKING_SENDER_ID` to your approved sender ID.
 
-4. Run the backend
+5. Run the backend
 
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
 
-5. Backend API Routes
+6. Backend API Routes
 
 **Health**
 - `GET /` — root check

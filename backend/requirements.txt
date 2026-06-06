@@ -7,3 +7,6 @@ pytest
 pytest-asyncio
 africastalking
 apscheduler
+sqlalchemy[asyncio]
+asyncpg
+aiosqlite
