@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from .services.authentication import auth_service
 from .services.weather import weather_service
 from .services.africastalking import africastalking_service
+from .services.crop_advice import crop_advice_service
 
 app = FastAPI(title="FarmSense API")
 
@@ -11,6 +12,13 @@ app = FastAPI(title="FarmSense API")
 class AuthPayload(BaseModel):
     username: str
     password: str
+
+
+class AdviceRequestPayload(BaseModel):
+    lat: float
+    lon: float
+    use_ai: bool = False
+    farmer_phone: str | None = None
 
 
 def _get_bearer_token(authorization: str | None) -> str:
@@ -30,30 +38,6 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
-
-
-@app.get("/api/weather/current")
-async def current_weather(lat: float, lon: float):
-    try:
-        return await weather_service.get_current(lat, lon)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
-
-
-@app.get("/api/weather/forecast")
-async def weather_forecast(lat: float, lon: float, days: int = 3):
-    try:
-        return await weather_service.get_forecast(lat, lon, days)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
-
-
-@app.post("/api/notify/farmer")
-async def notify_farmer(message: str):
-    try:
-        return africastalking_service.send_sms(message)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
 
 
 @app.post("/api/auth/register")
@@ -90,3 +74,41 @@ async def logout(authorization: str | None = Header(None)):
         return auth_service.logout(token)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+
+@app.get("/api/weather/current")
+async def current_weather(lat: float, lon: float):
+    try:
+        return await weather_service.get_current(lat, lon)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.get("/api/weather/forecast")
+async def weather_forecast(lat: float, lon: float, days: int = 3):
+    try:
+        return await weather_service.get_forecast(lat, lon, days)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/api/advice/request")
+async def request_advice(payload: AdviceRequestPayload):
+    try:
+        weather = await weather_service.get_current(payload.lat, payload.lon)
+        recommendation = crop_advice_service.suggest(weather)
+        africastalking_service.send_sms(recommendation, to=payload.farmer_phone)
+        return {
+            "recommendation": recommendation,
+            "sent": True,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/api/notify/farmer")
+async def notify_farmer(message: str):
+    try:
+        return africastalking_service.send_sms(message)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
