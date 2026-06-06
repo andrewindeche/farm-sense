@@ -18,6 +18,57 @@ async def test_health_returns_ok(client):
 
 
 @pytest.mark.asyncio
+async def test_auth_register_login_and_me(client):
+    register_resp = await client.post(
+        "/api/auth/register",
+        json={"username": "farmer1", "password": "strongpass"},
+    )
+    assert register_resp.status_code == 200
+    assert register_resp.json() == {"username": "farmer1", "status": "registered"}
+
+    login_resp = await client.post(
+        "/api/auth/login",
+        json={"username": "farmer1", "password": "strongpass"},
+    )
+    assert login_resp.status_code == 200
+    token = login_resp.json()["access_token"]
+    assert login_resp.json()["token_type"] == "bearer"
+
+    me_resp = await client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert me_resp.status_code == 200
+    assert me_resp.json() == {"username": "farmer1"}
+
+
+@pytest.mark.asyncio
+async def test_auth_logout(client):
+    await client.post(
+        "/api/auth/register",
+        json={"username": "farmer2", "password": "pass123"},
+    )
+    login_resp = await client.post(
+        "/api/auth/login",
+        json={"username": "farmer2", "password": "pass123"},
+    )
+    token = login_resp.json()["access_token"]
+
+    logout_resp = await client.post(
+        "/api/auth/logout",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert logout_resp.status_code == 200
+    assert logout_resp.json() == {"status": "logged_out"}
+
+    me_resp = await client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert me_resp.status_code == 401
+
+
+@pytest.mark.asyncio
 async def test_current_weather_requires_lat_lon(client):
     with patch(
         "app.services.weather.weather_service.get_current"

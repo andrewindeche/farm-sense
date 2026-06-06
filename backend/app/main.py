@@ -1,9 +1,27 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel
 
+from .services.authentication import auth_service
 from .services.weather import weather_service
 from .services.africastalking import africastalking_service
 
 app = FastAPI(title="FarmSense API")
+
+
+class AuthPayload(BaseModel):
+    username: str
+    password: str
+
+
+def _get_bearer_token(authorization: str | None) -> str:
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+
+    return parts[1]
 
 @app.get("/")
 async def root():
@@ -36,3 +54,39 @@ async def notify_farmer(message: str):
         return africastalking_service.send_sms(message)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.post("/api/auth/register")
+async def register(payload: AuthPayload):
+    try:
+        return auth_service.register(payload.username, payload.password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/auth/login")
+async def login(payload: AuthPayload):
+    try:
+        token = auth_service.authenticate(payload.username, payload.password)
+        return {"access_token": token, "token_type": "bearer"}
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+
+@app.get("/api/auth/me")
+async def me(authorization: str | None = Header(None)):
+    try:
+        token = _get_bearer_token(authorization)
+        username = auth_service.validate_token(token)
+        return {"username": username}
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
+
+
+@app.post("/api/auth/logout")
+async def logout(authorization: str | None = Header(None)):
+    try:
+        token = _get_bearer_token(authorization)
+        return auth_service.logout(token)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e))
