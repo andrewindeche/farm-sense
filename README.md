@@ -3,7 +3,7 @@
 | Tool                      | Description                     | Tags for tools used             |
 | ------------------------- | ------------------------------- | ------------------------------- |
 | 1.GitHub                  | Version Control                 | [Version-Control]; [Repository];|
-| 2.Weather API             | REST API                        | [REST]; [Request];              |
+| 2.WeatherAI API             | REST API                        | [REST]; [Request];              |
 | 3.GitHub                  | Version Control                 | [Version-Control]; [Repository];|
 | 4.Africa's Talking        | SMS Gateway                     | [SMS]; [Low-Latency];           |
 | 5.Firebase cloud Messaging| Push Notification               | [Push-Notification];            |
