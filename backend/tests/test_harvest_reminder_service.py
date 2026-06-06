@@ -33,3 +33,26 @@ def test_suggest_extreme_heat():
     result = harvest_reminder_service.suggest(weather)
     assert "extreme heat" in result.lower()
     assert "morning" in result.lower()
+
+
+def test_harvest_reminder_zero_temp_c_not_falsy():
+    weather = {"current": {"temp_c": 0, "temperature": 25, "humidity": 70, "condition": {"text": "Cloudy"}, "precip_mm": 0}}
+    result = harvest_reminder_service.suggest(weather)
+    assert "frost" in result.lower()
+
+
+def test_harvest_reminder_zero_humidity_not_falsy():
+    weather = {"current": {"temp_c": 35, "humidity": 0, "humid": 80, "condition": {"text": "Sunny"}, "precip_mm": 0}}
+    result = harvest_reminder_service.suggest(weather)
+    assert "early" in result.lower()
+
+
+def test_harvest_reminder_zero_precip_not_falsy():
+    weather = {"current": {"temp_c": 24, "humidity": 45, "condition": {"text": "Clear"}, "precip_mm": 0, "rain": 10}}
+    result = harvest_reminder_service.suggest(weather)
+    assert "favorable" in result.lower()
+
+
+def test_harvest_reminder_missing_current_defaults_to_zero():
+    result = harvest_reminder_service.suggest({})
+    assert "freezing" in result.lower() or "frost" in result.lower()

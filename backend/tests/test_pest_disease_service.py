@@ -34,3 +34,20 @@ def test_suggest_steady_rain_warmth():
     result = pest_disease_service.suggest(weather)
     assert "black sigatoka" in result.lower()
     assert "rain" in result.lower()
+
+
+def test_pest_disease_zero_temp_c_not_falsy():
+    weather = {"current": {"temp_c": 0, "humidity": 90, "condition": {"text": "Drizzle"}, "precip_mm": 2}}
+    result = pest_disease_service.suggest(weather)
+    assert "root rot" in result.lower()
+
+
+def test_pest_disease_zero_humidity_not_falsy():
+    weather = {"current": {"temp_c": 35, "humidity": 0, "humid": 50, "condition": {"text": "Sunny"}, "precip_mm": 0}}
+    result = pest_disease_service.suggest(weather)
+    assert "spider mites" in result.lower()
+
+
+def test_pest_disease_missing_current_returns_default():
+    result = pest_disease_service.suggest({})
+    assert "general leaf spot" in result.lower()
