@@ -79,6 +79,10 @@ uvicorn app.main:app --reload --port 8001
 - `GET /api/weather/current?lat=<lat>&lon=<lon>`
 - `GET /api/weather/forecast?lat=<lat>&lon=<lon>&days=<days>`
 - `POST /api/notify/farmer?message=<text>`
+- `POST /api/auth/register` with JSON `{ "username": "user", "password": "pass" }`
+- `POST /api/auth/login` with JSON `{ "username": "user", "password": "pass" }`
+- `GET /api/auth/me` with header `Authorization: Bearer <token>`
+- `POST /api/auth/logout` with header `Authorization: Bearer <token>`
 
 7. Postman usage
 - Do not send secret keys from Postman.
