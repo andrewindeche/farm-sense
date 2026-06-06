@@ -85,7 +85,7 @@ async def test_returns_none_on_invalid_response(service):
 
 
 @pytest.mark.asyncio
-async def test_use_ai_flag_returns_source_ai(client):
+async def test_use_ai_flag_returns_ai_content(client):
     with patch(
         "app.services.weather.weather_service.get_current"
     ) as mock_weather, patch(
@@ -104,7 +104,6 @@ async def test_use_ai_flag_returns_source_ai(client):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["source"] == "ai"
     assert data["recommendation"] == "AI says plant maize."
 
 
@@ -128,5 +127,4 @@ async def test_use_ai_flag_falls_back_to_rules_on_ai_failure(client):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["source"] == "rules"
     assert "recommendation" in data

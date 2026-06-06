@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 from .services.authentication import auth_service
 from .services.weather import weather_service
 from .services.africastalking import africastalking_service
-from .services.ai import ai_service
 from .services.crop_advice import crop_advice_service
 from .services.pest_disease import pest_disease_service
 from .services.harvest_reminder import harvest_reminder_service
@@ -147,20 +146,13 @@ async def request_advice(request: Request, payload: AdviceRequestPayload):
         logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
         raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
 
-    if payload.use_ai:
-        ai_result = await ai_service.suggest_crop(weather)
-        recommendation = ai_result if ai_result else crop_advice_service.suggest(weather)
-        source = "ai" if ai_result else "rules"
-    else:
-        recommendation = crop_advice_service.suggest(weather)
-        source = "rules"
+    recommendation = await crop_advice_service.suggest(weather, use_ai=payload.use_ai)
 
     try:
         sender_id = africastalking_service.get_sender_id()
         sms_response = africastalking_service.send_sms(recommendation, to=payload.farmer_phone)
         return {
             "recommendation": recommendation,
-            "source": source,
             "sent": True,
             "sms_sender_id": sender_id,
             "sms_response": sms_response,
@@ -169,7 +161,6 @@ async def request_advice(request: Request, payload: AdviceRequestPayload):
         logger.warning("SMS send failed (advice still returned): %s: %s", type(e).__name__, e)
         return {
             "recommendation": recommendation,
-            "source": source,
             "sent": False,
             "sms_error": str(e),
         }
@@ -184,20 +175,13 @@ async def pest_disease_advice(request: Request, payload: AdviceRequestPayload):
         logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
         raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
 
-    if payload.use_ai:
-        ai_result = await ai_service.suggest_pest(weather)
-        alert = ai_result if ai_result else pest_disease_service.suggest(weather)
-        source = "ai" if ai_result else "rules"
-    else:
-        alert = pest_disease_service.suggest(weather)
-        source = "rules"
+    alert = await pest_disease_service.suggest(weather, use_ai=payload.use_ai)
 
     try:
         sender_id = africastalking_service.get_sender_id()
         sms_response = africastalking_service.send_sms(alert, to=payload.farmer_phone)
         return {
             "alert": alert,
-            "source": source,
             "sent": True,
             "sms_sender_id": sender_id,
             "sms_response": sms_response,
@@ -206,7 +190,6 @@ async def pest_disease_advice(request: Request, payload: AdviceRequestPayload):
         logger.warning("SMS send failed (alert still returned): %s: %s", type(e).__name__, e)
         return {
             "alert": alert,
-            "source": source,
             "sent": False,
             "sms_error": str(e),
         }
@@ -221,20 +204,13 @@ async def harvest_reminder(request: Request, payload: AdviceRequestPayload):
         logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
         raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
 
-    if payload.use_ai:
-        ai_result = await ai_service.suggest_harvest(weather)
-        reminder = ai_result if ai_result else harvest_reminder_service.suggest(weather)
-        source = "ai" if ai_result else "rules"
-    else:
-        reminder = harvest_reminder_service.suggest(weather)
-        source = "rules"
+    reminder = await harvest_reminder_service.suggest(weather, use_ai=payload.use_ai)
 
     try:
         sender_id = africastalking_service.get_sender_id()
         sms_response = africastalking_service.send_sms(reminder, to=payload.farmer_phone)
         return {
             "reminder": reminder,
-            "source": source,
             "sent": True,
             "sms_sender_id": sender_id,
             "sms_response": sms_response,
@@ -243,7 +219,6 @@ async def harvest_reminder(request: Request, payload: AdviceRequestPayload):
         logger.warning("SMS send failed (reminder still returned): %s: %s", type(e).__name__, e)
         return {
             "reminder": reminder,
-            "source": source,
             "sent": False,
             "sms_error": str(e),
         }
