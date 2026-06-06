@@ -23,11 +23,16 @@ async def test_get_current_calls_correct_endpoint(service):
             _mock_response({"current": {"temp_c": 25}})
         )
 
-        result = await service.get_current("Nairobi")
+        result = await service.get_current(-1.2921, 36.8219)
 
     assert result == {"current": {"temp_c": 25}}
+    mock_client.assert_called_once_with(
+        base_url=service.base_url,
+        headers={"Authorization": f"Bearer {service.api_key}"},
+    )
     mock_client.return_value.__aenter__.return_value.get.assert_called_once_with(
-        "/current.json", params={"key": service.api_key, "q": "Nairobi"}
+        "/current",
+        params={"lat": -1.2921, "lon": 36.8219},
     )
 
 
@@ -38,12 +43,16 @@ async def test_get_forecast_calls_correct_endpoint(service):
             _mock_response({"forecast": {"forecastday": []}})
         )
 
-        result = await service.get_forecast("Nairobi", days=5)
+        result = await service.get_forecast(-1.2921, 36.8219, days=5)
 
     assert result == {"forecast": {"forecastday": []}}
+    mock_client.assert_called_once_with(
+        base_url=service.base_url,
+        headers={"Authorization": f"Bearer {service.api_key}"},
+    )
     mock_client.return_value.__aenter__.return_value.get.assert_called_once_with(
-        "/forecast.json",
-        params={"key": service.api_key, "q": "Nairobi", "days": 5},
+        "/forecast",
+        params={"lat": -1.2921, "lon": 36.8219, "days": 5},
     )
 
 
@@ -54,11 +63,15 @@ async def test_get_forecast_defaults_to_3_days(service):
             _mock_response({"forecast": {}})
         )
 
-        await service.get_forecast("Nairobi")
+        await service.get_forecast(-1.2921, 36.8219)
 
+    mock_client.assert_called_once_with(
+        base_url=service.base_url,
+        headers={"Authorization": f"Bearer {service.api_key}"},
+    )
     mock_client.return_value.__aenter__.return_value.get.assert_called_once_with(
-        "/forecast.json",
-        params={"key": service.api_key, "q": "Nairobi", "days": 3},
+        "/forecast",
+        params={"lat": -1.2921, "lon": 36.8219, "days": 3},
     )
 
 
@@ -70,4 +83,4 @@ async def test_raises_on_http_error(service):
         )
 
         with pytest.raises(Exception, match="API error"):
-            await service.get_current("Nairobi")
+            await service.get_current(-1.2921, 36.8219)

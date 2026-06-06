@@ -18,58 +18,32 @@ async def test_health_returns_ok(client):
 
 
 @pytest.mark.asyncio
-async def test_current_weather_defaults_to_nairobi(client):
+async def test_current_weather_requires_lat_lon(client):
     with patch(
         "app.services.weather.weather_service.get_current"
     ) as mock_get:
         mock_get.return_value = {"current": {"temp_c": 22}}
 
-        resp = await client.get("/api/weather/current")
+        resp = await client.get("/api/weather/current?lat=-1.2921&lon=36.8219")
 
     assert resp.status_code == 200
     assert resp.json() == {"current": {"temp_c": 22}}
-    mock_get.assert_called_once_with("Nairobi")
+    mock_get.assert_called_once_with(-1.2921, 36.8219)
 
 
 @pytest.mark.asyncio
-async def test_current_weather_passes_location(client):
-    with patch(
-        "app.services.weather.weather_service.get_current"
-    ) as mock_get:
-        mock_get.return_value = {"current": {"temp_c": 30}}
-
-        resp = await client.get("/api/weather/current?location=Mombasa")
-
-    assert resp.status_code == 200
-    mock_get.assert_called_once_with("Mombasa")
-
-
-@pytest.mark.asyncio
-async def test_forecast_defaults(client):
-    with patch(
-        "app.services.weather.weather_service.get_forecast"
-    ) as mock_get:
-        mock_get.return_value = {"forecast": {"forecastday": []}}
-
-        resp = await client.get("/api/weather/forecast")
-
-    assert resp.status_code == 200
-    mock_get.assert_called_once_with("Nairobi", 3)
-
-
-@pytest.mark.asyncio
-async def test_forecast_passes_location_and_days(client):
+async def test_forecast_passes_lat_lon_and_days(client):
     with patch(
         "app.services.weather.weather_service.get_forecast"
     ) as mock_get:
         mock_get.return_value = {"forecast": {"forecastday": []}}
 
         resp = await client.get(
-            "/api/weather/forecast?location=Kisumu&days=7"
+            "/api/weather/forecast?lat=-1.2921&lon=36.8219&days=7"
         )
 
     assert resp.status_code == 200
-    mock_get.assert_called_once_with("Kisumu", 7)
+    mock_get.assert_called_once_with(-1.2921, 36.8219, 7)
 
 
 @pytest.mark.asyncio
@@ -79,7 +53,7 @@ async def test_weather_returns_502_on_service_error(client):
     ) as mock_get:
         mock_get.side_effect = Exception("API unavailable")
 
-        resp = await client.get("/api/weather/current")
+        resp = await client.get("/api/weather/current?lat=-1.2921&lon=36.8219")
 
     assert resp.status_code == 502
     assert resp.json() == {"detail": "API unavailable"}
