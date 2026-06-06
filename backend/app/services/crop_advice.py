@@ -6,10 +6,10 @@ from typing import Any
 class CropAdviceService:
     def suggest(self, weather: dict[str, Any]) -> str:
         current = weather.get("current", {})
-        temp = current.get("temp_c") or current.get("temperature") or 0
+        temp = current.get("temp_c") if "temp_c" in current else current.get("temperature", 0)
         condition = str(current.get("condition", {}).get("text", "")).lower()
-        humidity = current.get("humidity") or current.get("humid") or 0
-        precipitation = current.get("precip_mm") or current.get("rain") or 0
+        humidity = current.get("humidity") if "humidity" in current else current.get("humid", 0)
+        precipitation = current.get("precip_mm") if "precip_mm" in current else current.get("rain", 0)
 
         crops = []
         reasons = []

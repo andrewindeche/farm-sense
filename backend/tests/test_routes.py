@@ -389,3 +389,113 @@ async def test_notify_farmer_route_returns_502_on_error(client):
 
     assert resp.status_code == 502
     assert resp.json() == {"detail": "SMS failed"}
+
+
+@pytest.mark.asyncio
+async def test_auth_register_empty_username(client):
+    resp = await client.post(
+        "/api/auth/register",
+        json={"username": "", "password": "strongpass"},
+    )
+    assert resp.status_code == 400
+    assert "required" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_auth_register_whitespace_username(client):
+    resp = await client.post(
+        "/api/auth/register",
+        json={"username": "   ", "password": "strongpass"},
+    )
+    assert resp.status_code == 400
+    assert "required" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_auth_register_empty_password(client):
+    resp = await client.post(
+        "/api/auth/register",
+        json={"username": "farmer99", "password": ""},
+    )
+    assert resp.status_code == 400
+    assert "required" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_auth_login_empty_credentials(client):
+    resp = await client.post(
+        "/api/auth/login",
+        json={"username": "", "password": ""},
+    )
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_auth_me_missing_token(client):
+    resp = await client.get("/api/auth/me")
+    assert resp.status_code == 401
+    assert "missing" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_auth_me_invalid_token(client):
+    resp = await client.get(
+        "/api/auth/me",
+        headers={"Authorization": "Bearer invalidtoken123"},
+    )
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_subscribe_invalid_phone(client):
+    resp = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.29, "lon": 36.82, "phone": "not-a-phone"},
+    )
+    assert resp.status_code == 400
+    assert "phone" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_subscribe_empty_phone(client):
+    resp = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.29, "lon": 36.82, "phone": ""},
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_subscribe_invalid_lat(client):
+    resp = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": 200, "lon": 36.82, "phone": "+254700000001"},
+    )
+    assert resp.status_code == 400
+    assert "lat" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_subscribe_invalid_lon(client):
+    resp = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.29, "lon": 500, "phone": "+254700000001"},
+    )
+    assert resp.status_code == 400
+    assert "lon" in resp.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_subscribe_duplicate_phone(client):
+    resp1 = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.29, "lon": 36.82, "phone": "+254700000001"},
+    )
+    assert resp1.status_code == 200
+
+    resp2 = await client.post(
+        "/api/scheduler/subscribe",
+        json={"lat": -1.29, "lon": 36.82, "phone": "+254700000001"},
+    )
+    assert resp2.status_code == 200
+    assert resp2.json()["status"] == "updated"

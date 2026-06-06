@@ -134,6 +134,22 @@ uvicorn app.main:app --reload --port 8001
 **SMS Notifications (Africa's Talking)**
 - `POST /api/notify/farmer?message=Water+your+crops` — send SMS to farmer
 
+**Pest/Disease Alert**
+- `POST /api/advice/pest-disease` — request pest/disease alert and send SMS
+  - body: `{ "lat": -1.2921, "lon": 36.8219, "farmer_phone": "+254712345678" }`
+
+**Harvest Reminder**
+- `POST /api/advice/harvest-reminder` — request harvest reminder and send SMS
+  - body: `{ "lat": -1.2921, "lon": 36.8219, "farmer_phone": "+254712345678" }`
+
+**Cron Job Scheduler**
+- `GET /api/scheduler/subscribers` — list all subscribed farmers
+- `POST /api/scheduler/subscribe` — subscribe a farmer for daily advice
+  - body: `{ "lat": -1.2921, "lon": 36.8219, "phone": "+254712345678" }`
+- `POST /api/scheduler/unsubscribe` — unsubscribe a farmer
+  - body: `{ "phone": "+254712345678" }`
+- `POST /api/scheduler/deliver-now` — trigger immediate advice delivery to all subscribers
+
 6. Run tests
 
 ```bash

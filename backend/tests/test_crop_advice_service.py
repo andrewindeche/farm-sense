@@ -13,3 +13,26 @@ def test_suggest_uses_cool_wet_recommendation():
     result = crop_advice_service.suggest(weather)
     assert "leafy greens" in result.lower() or "kale" in result.lower()
     assert "cool" in result.lower() or "wet" in result.lower()
+
+
+def test_suggest_zero_temp_c_does_not_fall_through_to_temperature_fallback():
+    weather = {"current": {"temp_c": 0, "temperature": 25, "condition": {"text": "Rain"}, "humidity": 80, "precip_mm": 5}}
+    result = crop_advice_service.suggest(weather)
+    assert "leafy greens" in result.lower() or "kale" in result.lower()
+
+
+def test_suggest_zero_humidity_does_not_fall_through_to_humid_fallback():
+    weather = {"current": {"temp_c": 35, "humidity": 0, "humid": 50, "condition": {"text": "Sunny"}, "precip_mm": 0}}
+    result = crop_advice_service.suggest(weather)
+    assert "sorghum" in result.lower()
+
+
+def test_suggest_zero_precip_does_not_fall_through_to_rain_fallback():
+    weather = {"current": {"temp_c": 22, "humidity": 70, "precip_mm": 0, "rain": 10, "condition": {"text": "Rain"}}}
+    result = crop_advice_service.suggest(weather)
+    assert "tomatoes" in result.lower() or "pepper" in result.lower()
+
+
+def test_suggest_missing_current_returns_default():
+    result = crop_advice_service.suggest({})
+    assert "beans" in result.lower() or "sorghum" in result.lower()

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.config import settings
 from app.database import Subscriber, async_session
@@ -16,6 +18,24 @@ from app.services.pest_disease import pest_disease_service
 from app.services.weather import weather_service
 
 logger = logging.getLogger(__name__)
+
+_PHONE_RE = re.compile(r"^\+?[1-9]\d{6,14}$")
+
+
+def _validate_lat_lon(lat: float, lon: float) -> None:
+    if not (-90 <= lat <= 90):
+        raise ValueError(f"lat must be between -90 and 90, got {lat}")
+    if not (-180 <= lon <= 180):
+        raise ValueError(f"lon must be between -180 and 180, got {lon}")
+
+
+def _validate_phone(phone: str) -> None:
+    if not phone or not phone.strip():
+        raise ValueError("phone is required")
+    if not _PHONE_RE.match(phone.strip()):
+        raise ValueError(
+            f"invalid phone number '{phone}' — must be in international format (e.g. +2547XXXXXXXX)"
+        )
 
 
 class SchedulerService:
@@ -31,6 +51,10 @@ class SchedulerService:
             ]
 
     async def add_subscriber(self, lat: float, lon: float, phone: str) -> dict:
+        _validate_lat_lon(lat, lon)
+        _validate_phone(phone)
+        phone = phone.strip()
+
         async with async_session() as session:
             result = await session.execute(
                 select(Subscriber).where(Subscriber.phone == phone)
@@ -42,11 +66,18 @@ class SchedulerService:
                 await session.commit()
                 return {"phone": phone, "lat": lat, "lon": lon, "status": "updated"}
 
-            session.add(Subscriber(phone=phone, lat=lat, lon=lon))
-            await session.commit()
-            return {"phone": phone, "lat": lat, "lon": lon, "status": "subscribed"}
+            try:
+                session.add(Subscriber(phone=phone, lat=lat, lon=lon))
+                await session.commit()
+                return {"phone": phone, "lat": lat, "lon": lon, "status": "subscribed"}
+            except IntegrityError:
+                await session.rollback()
+                raise ValueError("phone number already exists")
 
     async def remove_subscriber(self, phone: str) -> dict:
+        _validate_phone(phone)
+        phone = phone.strip()
+
         async with async_session() as session:
             result = await session.execute(
                 select(Subscriber).where(Subscriber.phone == phone)
@@ -159,18 +190,14 @@ class SchedulerService:
             return
 
         self._scheduler = AsyncIOScheduler()
-        cron = settings.scheduler_cron
-        parts = cron.strip().split()
-        if len(parts) == 5:
-            trigger = CronTrigger(
-                minute=parts[0],
-                hour=parts[1],
-                day=parts[2],
-                month=parts[3],
-                day_of_week=parts[4],
+        try:
+            trigger = CronTrigger.from_crontab(settings.scheduler_cron)
+        except (ValueError, KeyError) as e:
+            logger.warning(
+                "Invalid cron expression '%s': %s — using default 6 AM daily",
+                settings.scheduler_cron,
+                e,
             )
-        else:
-            logger.warning("Invalid cron expression '%s', using default 6 AM daily", cron)
             trigger = CronTrigger(hour=6, minute=0)
 
         self._scheduler.add_job(
@@ -182,7 +209,7 @@ class SchedulerService:
         self._scheduler.start()
         logger.info(
             "Scheduler started with cron: %s (%d subscriber(s))",
-            cron,
+            settings.scheduler_cron,
             len(subscribers),
         )
 
