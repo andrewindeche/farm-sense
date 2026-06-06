@@ -146,6 +146,28 @@ async def test_advice_request_sends_fallback_recommendation(client):
 
 
 @pytest.mark.asyncio
+async def test_advice_request_returns_advice_even_when_sms_fails(client):
+    with patch(
+        "app.services.weather.weather_service.get_current"
+    ) as mock_weather, patch(
+        "app.services.africastalking.africastalking_service.send_sms"
+    ) as mock_send:
+        mock_weather.return_value = {"current": {"temp_c": 22, "condition": {"text": "Rain"}, "humidity": 70, "precip_mm": 5}}
+        mock_send.side_effect = RuntimeError("SMS gateway down")
+
+        resp = await client.post(
+            "/api/advice/request",
+            json={"lat": -1.2921, "lon": 36.8219},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["sent"] is False
+    assert "recommendation" in data
+    assert data["sms_error"] == "SMS gateway down"
+
+
+@pytest.mark.asyncio
 async def test_notify_farmer_route_returns_502_on_error(client):
     with patch(
         "app.services.africastalking.africastalking_service.send_sms"

@@ -7,6 +7,13 @@ class WeatherService:
     def __init__(self) -> None:
         self.base_url = settings.weather_api_base_url
         self.api_key = settings.weather_api_key
+        if not self.api_key:
+            raise RuntimeError("WeatherAI API key is missing. Set WEATHER_API_KEY in backend/.env.")
+        if self.api_key.startswith("atsk_"):
+            raise RuntimeError(
+                "WeatherAI API key appears to be an Africa's Talking key. "
+                "Use a valid WeatherAI key for WEATHER_API_KEY."
+            )
 
     async def _get(self, path: str, params: dict | None = None) -> dict:
         headers = {"Authorization": f"Bearer {self.api_key}"}

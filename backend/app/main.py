@@ -1,5 +1,10 @@
+import logging
+
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from .services.authentication import auth_service
 from .services.weather import weather_service
@@ -96,14 +101,32 @@ async def weather_forecast(lat: float, lon: float, days: int = 3):
 async def request_advice(payload: AdviceRequestPayload):
     try:
         weather = await weather_service.get_current(payload.lat, payload.lon)
+    except Exception as e:
+        logger.error("Weather fetch failed: %s: %s", type(e).__name__, e)
+        raise HTTPException(status_code=502, detail=f"Weather service error: {e}")
+
+    try:
         recommendation = crop_advice_service.suggest(weather)
-        africastalking_service.send_sms(recommendation, to=payload.farmer_phone)
+    except Exception as e:
+        logger.error("Crop advice failed: %s: %s", type(e).__name__, e)
+        raise HTTPException(status_code=502, detail=f"Crop advice error: {e}")
+
+    try:
+        sender_id = africastalking_service.get_sender_id()
+        sms_response = africastalking_service.send_sms(recommendation, to=payload.farmer_phone)
         return {
             "recommendation": recommendation,
             "sent": True,
+            "sms_sender_id": sender_id,
+            "sms_response": sms_response,
         }
     except Exception as e:
-        raise HTTPException(status_code=502, detail=str(e))
+        logger.warning("SMS send failed (advice still returned): %s: %s", type(e).__name__, e)
+        return {
+            "recommendation": recommendation,
+            "sent": False,
+            "sms_error": str(e),
+        }
 
 
 @app.post("/api/notify/farmer")
