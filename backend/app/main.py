@@ -1,8 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,6 +19,9 @@ from .database import init_db
 from .services.scheduler import scheduler_service
 
 
+limiter = Limiter(key_func=get_remote_address)
+
+
 @asynccontextmanager
 async def lifespan(app):
     await init_db()
@@ -26,6 +31,8 @@ async def lifespan(app):
 
 
 app = FastAPI(title="FarmSense API", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(429, _rate_limit_exceeded_handler)
 
 
 class AuthPayload(BaseModel):
@@ -61,16 +68,20 @@ def _get_bearer_token(authorization: str | None) -> str:
     return parts[1]
 
 @app.get("/")
-async def root():
+@limiter.limit("100/minute")
+async def root(request: Request):
     return {"message": "Fastapi is running!"}
 
+
 @app.get("/health")
-async def health():
+@limiter.limit("100/minute")
+async def health(request: Request):
     return {"status": "ok"}
 
 
 @app.post("/api/auth/register")
-async def register(payload: AuthPayload):
+@limiter.limit("10/minute")
+async def register(request: Request, payload: AuthPayload):
     try:
         return await auth_service.register(payload.username, payload.password)
     except ValueError as e:
@@ -78,7 +89,8 @@ async def register(payload: AuthPayload):
 
 
 @app.post("/api/auth/login")
-async def login(payload: AuthPayload):
+@limiter.limit("20/minute")
+async def login(request: Request, payload: AuthPayload):
     try:
         token = await auth_service.authenticate(payload.username, payload.password)
         return {"access_token": token, "token_type": "bearer"}
@@ -87,7 +99,8 @@ async def login(payload: AuthPayload):
 
 
 @app.get("/api/auth/me")
-async def me(authorization: str | None = Header(None)):
+@limiter.limit("30/minute")
+async def me(request: Request, authorization: str | None = Header(None)):
     try:
         token = _get_bearer_token(authorization)
         username = await auth_service.validate_token(token)
@@ -97,7 +110,8 @@ async def me(authorization: str | None = Header(None)):
 
 
 @app.post("/api/auth/logout")
-async def logout(authorization: str | None = Header(None)):
+@limiter.limit("30/minute")
+async def logout(request: Request, authorization: str | None = Header(None)):
     try:
         token = _get_bearer_token(authorization)
         return await auth_service.logout(token)
@@ -106,7 +120,8 @@ async def logout(authorization: str | None = Header(None)):
 
 
 @app.get("/api/weather/current")
-async def current_weather(lat: float, lon: float):
+@limiter.limit("30/minute")
+async def current_weather(request: Request, lat: float, lon: float):
     try:
         return await weather_service.get_current(lat, lon)
     except Exception as e:
@@ -114,7 +129,8 @@ async def current_weather(lat: float, lon: float):
 
 
 @app.get("/api/weather/forecast")
-async def weather_forecast(lat: float, lon: float, days: int = 3):
+@limiter.limit("30/minute")
+async def weather_forecast(request: Request, lat: float, lon: float, days: int = 3):
     try:
         return await weather_service.get_forecast(lat, lon, days)
     except Exception as e:
@@ -122,7 +138,8 @@ async def weather_forecast(lat: float, lon: float, days: int = 3):
 
 
 @app.post("/api/advice/request")
-async def request_advice(payload: AdviceRequestPayload):
+@limiter.limit("10/minute")
+async def request_advice(request: Request, payload: AdviceRequestPayload):
     try:
         weather = await weather_service.get_current(payload.lat, payload.lon)
     except Exception as e:
@@ -154,7 +171,8 @@ async def request_advice(payload: AdviceRequestPayload):
 
 
 @app.post("/api/advice/pest-disease")
-async def pest_disease_advice(payload: AdviceRequestPayload):
+@limiter.limit("10/minute")
+async def pest_disease_advice(request: Request, payload: AdviceRequestPayload):
     try:
         weather = await weather_service.get_current(payload.lat, payload.lon)
     except Exception as e:
@@ -186,7 +204,8 @@ async def pest_disease_advice(payload: AdviceRequestPayload):
 
 
 @app.post("/api/advice/harvest-reminder")
-async def harvest_reminder(payload: AdviceRequestPayload):
+@limiter.limit("10/minute")
+async def harvest_reminder(request: Request, payload: AdviceRequestPayload):
     try:
         weather = await weather_service.get_current(payload.lat, payload.lon)
     except Exception as e:
@@ -218,12 +237,14 @@ async def harvest_reminder(payload: AdviceRequestPayload):
 
 
 @app.get("/api/scheduler/subscribers")
-async def list_subscribers():
+@limiter.limit("30/minute")
+async def list_subscribers(request: Request):
     return {"subscribers": await scheduler_service.get_subscribers()}
 
 
 @app.post("/api/scheduler/subscribe")
-async def subscribe(payload: SubscribePayload):
+@limiter.limit("20/minute")
+async def subscribe(request: Request, payload: SubscribePayload):
     try:
         return await scheduler_service.add_subscriber(payload.lat, payload.lon, payload.phone)
     except Exception as e:
@@ -231,7 +252,8 @@ async def subscribe(payload: SubscribePayload):
 
 
 @app.post("/api/scheduler/unsubscribe")
-async def unsubscribe(payload: UnsubscribePayload):
+@limiter.limit("10/minute")
+async def unsubscribe(request: Request, payload: UnsubscribePayload):
     try:
         return await scheduler_service.remove_subscriber(payload.phone)
     except Exception as e:
@@ -239,7 +261,8 @@ async def unsubscribe(payload: UnsubscribePayload):
 
 
 @app.post("/api/scheduler/deliver-now")
-async def deliver_now():
+@limiter.limit("3/minute")
+async def deliver_now(request: Request):
     try:
         return await scheduler_service.deliver_all()
     except Exception as e:
@@ -247,7 +270,8 @@ async def deliver_now():
 
 
 @app.post("/api/notify/farmer")
-async def notify_farmer(message: str):
+@limiter.limit("5/minute")
+async def notify_farmer(request: Request, message: str):
     try:
         return africastalking_service.send_sms(message)
     except Exception as e:
