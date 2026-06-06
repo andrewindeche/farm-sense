@@ -5,6 +5,7 @@ from httpx import ASGITransport, AsyncClient
 
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite://"
 
+from app.cache import cache
 from app.database import Base, engine, init_db
 from app.main import app
 
@@ -29,6 +30,12 @@ def pytest_collection_modifyitems(items):
             "tests.test_scheduler_service",
         ):
             item.fixturenames.append("db")
+
+
+@pytest.fixture(autouse=True)
+async def _clear_cache():
+    await cache.clear()
+    yield
 
 
 @pytest.fixture
