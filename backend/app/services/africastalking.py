@@ -34,8 +34,6 @@ class AfricasTalkingService:
         if not recipients:
             raise ValueError("No recipient phone numbers configured/provided")
 
-        # The official SDK accepts a comma-separated string or list depending on version.
-        # Pass recipients as a list when supported.
         resp = self._sms.send(message, recipients, sender_id=self.sender_id)
         return resp
 
