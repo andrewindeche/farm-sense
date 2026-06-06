@@ -5,6 +5,9 @@ from .services.africastalking import africastalking_service
 
 app = FastAPI(title="FarmSense API")
 
+@app.get("/")
+async def root():
+    return {"message": "Fastapi is running!"}
 
 @app.get("/health")
 async def health():
