@@ -14,12 +14,16 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/farmsense"
 
-    @field_validator("database_url", mode="after")
-    @classmethod
-    def convert_postgres_url_to_async(cls, v: str) -> str:
-        if v.startswith("postgresql://"):
-            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return v
+    def model_post_init(self, __context: object) -> None:
+        # Railway provides DATABASE_URL as `postgresql://...` (the sync scheme).
+        # SQLAlchemy's async engine requires `postgresql+asyncpg://...`, so we
+        # rewrite the scheme here to avoid a ModuleNotFoundError for psycopg2.
+        if self.database_url.startswith("postgresql://") or self.database_url.startswith("postgres://"):
+            object.__setattr__(
+                self,
+                "database_url",
+                self.database_url.replace("://", "+asyncpg://", 1),
+            )
 
     frontend_url: str = "http://localhost:5173"
 
