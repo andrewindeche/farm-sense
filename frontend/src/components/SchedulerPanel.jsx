@@ -36,6 +36,7 @@ import {
   setDeliveryResult,
   setEditDialog,
 } from "../store/slices/subscriberSlice";
+import { apiFetch } from "../lib/api";
 
 function SubscriberRow({ sub, onEdit, onDelete }) {
   return (
@@ -128,7 +129,7 @@ export default function SchedulerPanel() {
   const fetchSubscribers = useCallback(async () => {
     dispatch(setLoading(true));
     try {
-      const res = await fetch("/api/scheduler/subscribers");
+      const res = await apiFetch("/api/scheduler/subscribers");
       const data = await res.json();
       if (res.ok) dispatch(setList(data.subscribers || []));
     } catch { /* ignore */ }
@@ -145,7 +146,7 @@ export default function SchedulerPanel() {
       return;
     }
     try {
-      const res = await fetch("/api/scheduler/subscribe", {
+      const res = await apiFetch("/api/scheduler/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: phone.trim(), lat: subLat, lon: subLon }),
@@ -173,7 +174,7 @@ export default function SchedulerPanel() {
 
   const handleUnsubscribe = async (p) => {
     try {
-      await fetch("/api/scheduler/unsubscribe", {
+      await apiFetch("/api/scheduler/unsubscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: p }),
@@ -186,7 +187,7 @@ export default function SchedulerPanel() {
     dispatch(setDelivering(true));
     dispatch(setDeliveryResult(null));
     try {
-      const res = await fetch("/api/scheduler/deliver-now", { method: "POST" });
+      const res = await apiFetch("/api/scheduler/deliver-now", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Delivery failed");
       dispatch(setDeliveryResult(data));
@@ -202,13 +203,13 @@ export default function SchedulerPanel() {
     const { oldPhone, newPhone, lat, lon } = editDialog;
     try {
       if (newPhone !== oldPhone) {
-        await fetch("/api/scheduler/unsubscribe", {
+        await apiFetch("/api/scheduler/unsubscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: oldPhone }),
         });
       }
-      const res = await fetch("/api/scheduler/subscribe", {
+      const res = await apiFetch("/api/scheduler/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: newPhone, lat, lon }),

@@ -8,6 +8,7 @@ import {
 } from "@mui/icons-material";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchStart, fetchSuccess, fetchFail } from "../store/slices/adviceSlice";
+import { apiFetch } from "../lib/api";
 
 const services = [
   {
@@ -54,7 +55,7 @@ export default function AdviceCards() {
     try {
       let data;
       if (key === "weather") {
-        const res = await fetch(`/api/weather/current?lat=${lat}&lon=${lon}`);
+        const res = await apiFetch(`/api/weather/current?lat=${lat}&lon=${lon}`);
         data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Failed to fetch weather");
         data = data.current || data;
@@ -65,7 +66,7 @@ export default function AdviceCards() {
             : key === "pest"
               ? "/api/advice/pest-disease"
               : "/api/advice/harvest-reminder";
-        const res = await fetch(endpoint, {
+        const res = await apiFetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lat, lon }),
