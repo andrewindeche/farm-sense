@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import {
   Box,
   Card,
@@ -13,9 +14,11 @@ import {
 } from "@mui/material";
 import { Spa, Visibility, VisibilityOff } from "@mui/icons-material";
 import { apiFetch } from "../lib/api";
+import { login } from "../store/slices/authSlice";
 
 export default function Register() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -64,8 +67,7 @@ export default function Register() {
         return;
       }
 
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("username", username.trim());
+      dispatch(login({ token: data.access_token, username: username.trim() }));
       navigate("/dashboard");
     } catch {
       setError("Network error. Please try again.");
