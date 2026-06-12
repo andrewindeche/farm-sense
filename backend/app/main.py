@@ -40,13 +40,21 @@ async def lifespan(app):
 
 
 app = FastAPI(title="FarmSense API", lifespan=lifespan)
+origins = [
+    "http://127.0.0.1:5173",       # local dev
+    "http://localhost:5173",       # local dev
+    "https://farm-sense-production.up.railway.app",
+    "https://farm-sense.netlify.app",  # deployed frontend
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url,"https://farm-sense.netlify.app"],
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"],   # includes OPTIONS
     allow_headers=["*"],
 )
+
 app.state.limiter = limiter
 app.add_exception_handler(429, _rate_limit_exceeded_handler)
 

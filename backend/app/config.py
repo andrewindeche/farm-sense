@@ -23,8 +23,7 @@ class Settings(BaseSettings):
 
     frontend_url: str = "http://localhost:5173"
 
-    weather_api_key: str = ""
-    weather_api_base_url: str = "https://api.weather-ai.co/v1"
+    weather_api_base_url: str = "https://api.open-meteo.com/v1"
 
     africastalking_username: str = "sandbox"
     africastalking_api_key: str = ""
