@@ -41,10 +41,10 @@ async def lifespan(app):
 
 app = FastAPI(title="FarmSense API", lifespan=lifespan)
 origins = [
-    "http://127.0.0.1:5173",       # local dev
-    "http://localhost:5173",       # local dev
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
     "https://farm-sense-production.up.railway.app",
-    "https://farm-sense.netlify.app",  # deployed frontend
+    settings.frontend_url,
 ]
 
 app.add_middleware(
