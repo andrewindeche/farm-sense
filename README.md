@@ -6,10 +6,10 @@
 | 2.WeatherAI API             | REST API                        | [REST]; [Request];              |
 | 3.GitHub                  | Version Control                 | [Version-Control]; [Repository];|
 | 4.Africa's Talking        | SMS Gateway                     | [SMS]; [Low-Latency];           |
-| 5.Firebase cloud Messaging| Push Notification               | [Push-Notification];            |
-| 6.ReactJs                 | Frontend Library                | [Frontend]; [Javascript];       |
-| 7.FastApi                 | Backend Framework               | [Backend]; [Python];            |
-| 8.CronJob                 | Schedule jobs                   | [Jobs]; [Scheduler];            |
+| 5.ReactJs                 | Frontend Library                | [Frontend]; [Javascript];       |
+| 6.FastApi                 | Backend Framework               | [Backend]; [Python];            |
+| 7.CronJob                 | Schedule jobs                   | [Jobs]; [Scheduler];            |
+| 8.Netlify,Railways        | Cloud servers                   | [cloud]; [Deployments];         |
 
 ## <h1> Description</h1>
 
