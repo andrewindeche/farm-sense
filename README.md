@@ -3,7 +3,7 @@
 | Tool                      | Description                     | Tags for tools used             |
 | ------------------------- | ------------------------------- | ------------------------------- |
 | 1.GitHub                  | Version Control                 | [Version-Control]; [Repository];|
-| 2.WeatherAI API             | REST API                        | [REST]; [Request];              |
+| 2.Open-Meteo API            | REST API                        | [REST]; [Request];              |
 | 3.GitHub                  | Version Control                 | [Version-Control]; [Repository];|
 | 4.Africa's Talking        | SMS Gateway                     | [SMS]; [Low-Latency];           |
 | 5.ReactJs                 | Frontend Library                | [Frontend]; [Javascript];       |
@@ -13,7 +13,7 @@
 
 ## <h1> Description</h1>
 
-<p>The aim of the project is to build a dashboard with integrated SMS notifications designed for subsistence farmers. It leverages predictive weather patterns from the Weather API to provide timely farming advice such as crop planting suggestions, irrigation reminders, pest/disease alerts, and harvesting schedules</p>
+<p>The aim of the project is to build a dashboard with integrated SMS notifications designed for subsistence farmers. It leverages weather data to provide timely farming advice such as crop planting suggestions, irrigation reminders, pest/disease alerts, and harvesting schedules</p>
 
 ## <h1> Features</h1>
 
@@ -30,7 +30,7 @@
 
 | Step  | Feature                       | Role                                                     |
 | ----- | ----------------------------- | -------------------------------------------------------- |
-| 1.    |     WeatherAI                 | Fetch weather forecast based on GET request or Cronjob   |
+| 1.    |     Open-Meteo                | Fetch weather forecast based on GET request or Cronjob   |
 | 2.    |     FastAPI                   | Receives weather data, generates rule-based farming advice |                         |
 | 3.    |     SMS Gateway               | Delivers message to farmer's device                      |
 | 4.    |     Dashboard                 | Displaye forecast, API advice and SMS logs                |
@@ -44,7 +44,7 @@ git clone https://github.com/andrewindeche/farm-sense.git
 cd farm-sense
 ```
 
-2. Set Up Backend (FastAPI + WeatherAI)
+2. Set Up Backend (FastAPI)
 
 ```bash
 cd backend
@@ -88,7 +88,6 @@ psql -U farmsense_user -d farmsense -h localhost
 Create `backend/.env`:
 ```bash
 DATABASE_URL=postgresql+asyncpg://farmsense_user:your_secure_password_here@localhost:5432/farmsense
-WEATHER_API_KEY=your_weatherai_key
 AFRICASTALKING_USERNAME=sandbox
 AFRICASTALKING_API_KEY=your_africastalking_api_key
 AFRICASTALKING_SENDER_ID=AFRICASTKNG
@@ -97,8 +96,6 @@ FARMER_PHONE=+2547XXXXXXXX
 
 Notes:
 - Replace `your_secure_password_here` with the password you set for `farmsense_user`.
-- `WEATHER_API_KEY` must be a WeatherAI key, not an Africa's Talking key.
-- Africa's Talking keys usually start with `atsk_`; WeatherAI keys use a different prefix.
 - Use `AFRICASTALKING_SENDER_ID=AFRICASTKNG` (the default sandbox sender ID) when testing with the Africa's Talking sandbox account.
 - For a live Africa's Talking account, set `AFRICASTALKING_SENDER_ID` to your approved sender ID.
 
@@ -116,7 +113,7 @@ All endpoints are rate-limited per IP address to prevent abuse (configurable via
 - `POST /api/auth/register` — 10 requests/minute
 - `POST /api/auth/login` — 20 requests/minute
 - `GET /api/auth/me`, `POST /api/auth/logout` — 30 requests/minute
-- `GET /api/weather/current`, `GET /api/weather/forecast` — 30 requests/minute (protects WeatherAI API quota)
+- `GET /api/weather/current`, `GET /api/weather/forecast` — 30 requests/minute
 - `POST /api/advice/request`, `/api/advice/pest-disease`, `/api/advice/harvest-reminder` — 10 requests/minute (each triggers an SMS)
 - `POST /api/notify/farmer` — 5 requests/minute (each sends an SMS)
 - `GET /api/scheduler/subscribers` — 30 requests/minute
@@ -137,7 +134,7 @@ Exceeding a rate limit returns `429 Too Many Requests`.
 - `GET /api/auth/me` — header: `Authorization: Bearer <token>`
 - `POST /api/auth/logout` — header: `Authorization: Bearer <token>`
 
-**Weather (WeatherAI)**
+**Weather (Open-Meteo)**
 - `GET /api/weather/current?lat=-1.2921&lon=36.8219` — current conditions by coordinates
 - `GET /api/weather/forecast?lat=-1.2921&lon=36.8219&days=7` — forecast (1-7 days)
 
