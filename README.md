@@ -89,7 +89,6 @@ psql -U farmsense_user -d farmsense -h localhost
 Create `backend/.env`:
 ```bash
 DATABASE_URL=postgresql+asyncpg://farmsense_user:your_secure_password_here@localhost:5432/farmsense
-WEATHER_API_KEY=your_weatherai_key
 AFRICASTALKING_USERNAME=sandbox
 AFRICASTALKING_API_KEY=your_africastalking_api_key
 AFRICASTALKING_SENDER_ID=AFRICASTKNG
@@ -98,8 +97,7 @@ FARMER_PHONE=+2547XXXXXXXX
 
 Notes:
 - Replace `your_secure_password_here` with the password you set for `farmsense_user`.
-- `WEATHER_API_KEY` must be a WeatherAI key, not an Africa's Talking key.
-- Africa's Talking keys usually start with `atsk_`; WeatherAI keys use a different prefix.
+- Weather data is provided by [Open-Meteo](https://open-meteo.com/) — no API key required.
 - Use `AFRICASTALKING_SENDER_ID=AFRICASTKNG` (the default sandbox sender ID) when testing with the Africa's Talking sandbox account.
 - For a live Africa's Talking account, set `AFRICASTALKING_SENDER_ID` to your approved sender ID.
 

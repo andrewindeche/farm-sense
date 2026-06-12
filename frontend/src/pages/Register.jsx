@@ -14,11 +14,13 @@ import {
 import { Spa, Visibility, VisibilityOff } from "@mui/icons-material";
 import { apiFetch } from "../lib/api";
 
-export default function Login() {
+export default function Register() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -30,14 +32,26 @@ export default function Login() {
       setError("Username is required");
       return;
     }
+    if (username.trim().length < 3) {
+      setError("Username must be at least 3 characters");
+      return;
+    }
     if (!password) {
       setError("Password is required");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await apiFetch("/api/auth/login", {
+      const res = await apiFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim(), password }),
@@ -46,7 +60,7 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.detail || "Login failed");
+        setError(data.detail || "Registration failed");
         return;
       }
 
@@ -75,7 +89,7 @@ export default function Login() {
               FarmSense
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Smart farming advice at your fingertips
+              Create your account
             </Typography>
           </Box>
 
@@ -91,6 +105,7 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               sx={{ mb: 2 }}
+              fullWidth
               autoFocus
             />
             <TextField
@@ -98,7 +113,8 @@ export default function Login() {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              sx={{ mb: 3 }}
+              sx={{ mb: 2 }}
+              fullWidth
               slotProps={{
                 input: {
                   endAdornment: (
@@ -114,35 +130,55 @@ export default function Login() {
                 },
               }}
             />
+            <TextField
+              label="Confirm Password"
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              sx={{ mb: 3 }}
+              fullWidth
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        edge="end"
+                      >
+                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
             <Button
               type="submit"
               variant="contained"
               size="large"
               disabled={loading}
+              fullWidth
               sx={{
                 bgcolor: "primary.main",
                 "&:hover": { bgcolor: "primary.dark" },
               }}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Creating account..." : "Create Account"}
             </Button>
           </Box>
 
           <Box sx={{ textAlign: "center", mt: 3 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Use your registered credentials to access your dashboard
-            </Typography>
             <Typography variant="body2" color="text.secondary">
-              Don't have an account?{" "}
+              Already have an account?{" "}
               <Link
-                to="/register"
+                to="/login"
                 style={{
                   color: "#2E7D32",
                   textDecoration: "none",
                   fontWeight: 600,
                 }}
               >
-                Sign Up
+                Sign In
               </Link>
             </Typography>
           </Box>
