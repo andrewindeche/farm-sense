@@ -15,7 +15,7 @@ export default function Header() {
   };
 
   return (
-    <AppBar position="sticky" sx={{ bgcolor: "primary.dark" }}>
+    <AppBar position="sticky" sx={{ bgcolor: "primary.dark", zIndex: 1300 }}>
       <Toolbar>
         <Spa sx={{ mr: 1, color: "#A5D6A7" }} />
         <Typography variant="h6" sx={{ flexGrow: 1, color: "#fff" }}>
